@@ -1,0 +1,26 @@
+
+sec dev ops 
+
+we are using the .env and UUID to increase security not just storing password s in plain text 
+
+uuiid is always unique even among diffrent databases 
+Not null in the schemea is a part of input validation which is a part of sec dev ops
+
+
+
+in the db schema this follows the security rule of leas privelage 
+✅ In plain English:
+The role column makes sure every user has a valid role in the system, and prevents mistakes or invalid entries.
+
+
+the part here owner_id UUID REFERENCES Users(id) ON DELETE SET NULL, tyhis is security focused by making sure you can delete 
+a user with the foreign key without deleting the entire policy 
+
+
+
+shows how its a relationstion database
+Users
+   ↓
+Policies (owner_id)
+Tasks (assigned_to)
+AuditLogs (user_id)
