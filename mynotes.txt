@@ -24,3 +24,18 @@ Users
 Policies (owner_id)
 Tasks (assigned_to)
 AuditLogs (user_id)
+
+
+two seperate .env files 
+
+Layer	Responsibility
+React	UI only
+Express	Auth + API
+Postgres	Data
+JWT_SECRET	Backend only
+
+remember how the files got made with the slash and the terminal 
+
+this is to secure the password const express = require("express
+
+RBAC is what we doing on day four by controling whol has access to controls based on there role in the company
