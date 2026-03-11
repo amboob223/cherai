@@ -1,0 +1,17 @@
+const getAllUsers = (req, res) => {
+  res.json({
+    message: "Admin can see all users",
+    currentUser: req.user
+  });
+};
+
+const deleteUser = (req, res) => {
+  res.json({
+    message: `User ${req.params.id} deleted`
+  });
+};
+
+module.exports = {
+  getAllUsers,
+  deleteUser
+};

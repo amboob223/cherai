@@ -1,0 +1,35 @@
+const pool = require("../db");
+const logAction = require("../helpers/logHelper");
+
+const createPolicy = async (req, res) => {
+  try {
+    const { title, description } = req.body;
+
+    const result = await pool.query(
+      `INSERT INTO policies (title, description)
+       VALUES ($1, $2)
+       RETURNING *`,
+      [title, description]
+    );
+
+    const newPolicy = result.rows[0];
+
+    // AUDIT LOG
+    await logAction(
+      req.user.userId,
+      "CREATE_POLICY",
+      "policy",
+      newPolicy.id
+    );
+
+    res.status(201).json(newPolicy);
+
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send("Server error");
+  }
+};
+
+module.exports = {
+  createPolicy,
+};

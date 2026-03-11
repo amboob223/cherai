@@ -38,4 +38,27 @@ remember how the files got made with the slash and the terminal
 
 this is to secure the password const express = require("express
 
-RBAC is what we doing on day four by controling whol has access to controls based on there role in the company
+RBAC is what we doing on day four by c
+
+
+
+ontroling whol has access to controls based on there role in the company
+
+
+
+User Login
+   ↓
+JWT Token Issued
+   ↓
+Request to /api/users
+   ↓
+protect middleware
+   ↓
+JWT verified
+req.user = decoded user
+   ↓
+authorizeRoles("admin")
+   ↓
+Checks req.user.role
+   ↓
+Allowed or Forbidden
