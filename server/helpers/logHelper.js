@@ -1,18 +1,16 @@
+// helpers/logHelper.js
 const pool = require("../db");
 
-async function logAction(userId, action, entityType, entityId) {
+const logAction = async (userId, action, entity, entityId) => {
   try {
-    const result = await pool.query(
-      `INSERT INTO audit_logs (user_id, action, entity_type, entity_id)
-       VALUES ($1, $2, $3, $4)
-       RETURNING *`,
-      [userId, action, entityType, entityId]
+    await pool.query(
+      `INSERT INTO audit_logs (user_id, action, entity, entity_id)
+       VALUES ($1, $2, $3, $4)`,
+      [userId, action, entity, entityId]
     );
-
-    return result.rows[0];
   } catch (err) {
-    console.error("Audit log error:", err);
+    console.error("Audit log error:", err.message);
   }
-}
+};
 
 module.exports = logAction;

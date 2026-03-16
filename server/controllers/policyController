@@ -1,65 +1,136 @@
+// controllers/policyController.js
 const pool = require("../db");
 const logAction = require("../helpers/logHelper");
 
-// GET all policies
+// Helper function to calculate days until review
+const getDaysUntilReview = (reviewDate) => {
+  if (!reviewDate) return null; // no review date set
+  const today = new Date();
+  const review = new Date(reviewDate);
+  const diff = review - today;
+  return Math.ceil(diff / (1000 * 60 * 60 * 24)); // convert ms to days
+};
+
+// Helper to determine overdue status
+const getOverdueStatus = (reviewDate) => {
+  const days = getDaysUntilReview(reviewDate);
+  if (days === null) return false;
+  return days < 0;
+};
+
+// GET all policies with days_until_review and overdue flag
 const getPolicies = async (req, res) => {
   try {
-    const result = await pool.query("SELECT * FROM policies");
-    res.json(result.rows);
+    const result = await pool.query("SELECT * FROM policies ORDER BY created_at DESC");
+
+    const policiesWithCountdown = result.rows.map((policy) => ({
+      ...policy,
+      days_until_review: getDaysUntilReview(policy.review_date),
+      overdue: getOverdueStatus(policy.review_date),
+    }));
+
+    res.json(policiesWithCountdown);
   } catch (err) {
-    res.status(500).send("Server error");
+    console.error(err.message);
+    res.status(500).json({ msg: "Server error" });
   }
 };
 
-// GET single policy by ID
+// GET single policy by ID with countdown and overdue
 const getPolicyById = async (req, res) => {
   try {
     const { id } = req.params;
     const result = await pool.query("SELECT * FROM policies WHERE id = $1", [id]);
-    res.json(result.rows[0]);
+
+    if (!result.rows[0]) return res.status(404).json({ msg: "Policy not found" });
+
+    const policy = result.rows[0];
+    policy.days_until_review = getDaysUntilReview(policy.review_date);
+    policy.overdue = getOverdueStatus(policy.review_date);
+
+    res.json(policy);
   } catch (err) {
-    res.status(500).send("Server error");
+    console.error(err.message);
+    res.status(500).json({ msg: "Server error" });
   }
 };
 
-// CREATE policy
+// CREATE policy with auto 90-day review
 const createPolicy = async (req, res) => {
   try {
-    const { title, description } = req.body;
+    const { title, description, status = "draft" } = req.body;
 
     const result = await pool.query(
-      `INSERT INTO policies (title, description)
-       VALUES ($1, $2)
+      `INSERT INTO policies (title, description, owner_id, status, review_date, version)
+       VALUES ($1, $2, $3, $4, NOW() + INTERVAL '90 days', 1)
        RETURNING *`,
-      [title, description]
+      [title, description, req.user.userId, status]
     );
 
     const newPolicy = result.rows[0];
 
-    // AUDIT LOG
-    await logAction(
-      req.user.userId,
-      "CREATE_POLICY",
-      "policy",
-      newPolicy.id
-    );
+    // Audit log
+    await logAction(req.user.userId, "CREATE_POLICY", "policy", newPolicy.id);
 
     res.status(201).json(newPolicy);
-
   } catch (err) {
     console.error(err.message);
-    res.status(500).send("Server error");
+    res.status(500).json({ msg: "Server error" });
   }
 };
 
-// UPDATE policy
+// UPDATE policy with RBAC and version increment
 const updatePolicy = async (req, res) => {
-  res.status(501).send("Not implemented yet");
+  try {
+    const { id } = req.params;
+    const { title, description } = req.body;
+
+    const policyResult = await pool.query("SELECT * FROM policies WHERE id=$1", [id]);
+    if (policyResult.rows.length === 0) {
+      return res.status(404).json({ msg: "Policy not found" });
+    }
+
+    const existingPolicy = policyResult.rows[0];
+
+    // Authorization: only admin or owner
+    if (req.user.role !== "admin" && req.user.userId !== existingPolicy.owner_id) {
+      return res.status(403).json({ msg: "Not authorized to edit this policy" });
+    }
+
+    const updated = await pool.query(
+      `UPDATE policies
+       SET title=$1, description=$2, version = version + 1
+       WHERE id=$3
+       RETURNING *`,
+      [title, description, id]
+    );
+
+    await logAction(req.user.userId, "UPDATE_POLICY", "policy", id);
+
+    const policy = updated.rows[0];
+    policy.days_until_review = getDaysUntilReview(policy.review_date);
+    policy.overdue = getOverdueStatus(policy.review_date);
+
+    res.json(policy);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json({ msg: "Server error" });
+  }
 };
 
-// DELETE policy
+// DELETE policy with audit log
 const deletePolicy = async (req, res) => {
-  res.status(501).send("Not implemented yet");
+  try {
+    const { id } = req.params;
+    await pool.query("DELETE FROM policies WHERE id = $1", [id]);
+
+    await logAction(req.user.userId, "DELETE_POLICY", "policy", id);
+
+    res.json({ msg: "Policy deleted" });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json({ msg: "Server error" });
+  }
 };
 
 module.exports = {
