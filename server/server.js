@@ -14,12 +14,14 @@ app.use(express.json());
 const authRoutes = require("./routes/auth");
 const userRoutes = require("./routes/users");
 const policyRoutes = require("./routes/policies");
+const tasksRoutes = require("./routes/tasks");
 
 // Mount routes
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/policies", policyRoutes);
 
+app.use("/api/tasks", tasksRoutes);
 // Test route
 app.get("/", (req, res) => {
   res.send("ComplianceOS backend is running!");
