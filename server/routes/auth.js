@@ -8,7 +8,7 @@ const pool = require("../db"); // your PostgreSQL connection
 router.post("/register", async (req, res) => {
   try {
     const { name, email, password, role } = req.body;
-
+    console.log("LOGIN HIT - ROUTE FILE");
     // Check if user exists
     const existing = await pool.query("SELECT * FROM users WHERE email=$1", [email]);
     if (existing.rows.length > 0) return res.status(400).json({ message: "User exists" });

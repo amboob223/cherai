@@ -1,22 +1,25 @@
 const express = require("express");
 const router = express.Router();
+const { body } = require("express-validator");
+const validate = require("../middleware/validate");
+
 const {
   createTask,
-  assignUser,
-  updateStatus,
-  getTasks
+  getTasks,
+  updateTask,
+  deleteTask
 } = require("../controllers/taskController");
 
-// Create task
-router.post("/", createTask);
-
-// Assign user
-router.put("/:taskId/assign", assignUser);
-
-// Update status
-router.put("/:taskId/status", updateStatus);
-
-// Get tasks (filter by assignedUser)
-router.get("/", getTasks);
+// CREATE TASK
+router.post(
+  "/",
+  [
+    body("title").notEmpty().withMessage("Title is required"),
+    body("description").optional().isString(),
+    body("due_date").optional().isISO8601().withMessage("Invalid date format")
+  ],
+  validate,
+  createTask
+);
 
 module.exports = router;
