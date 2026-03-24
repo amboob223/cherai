@@ -1,0 +1,26 @@
+my-app/
+│
+├─ public/
+│   └─ index.html
+│
+├─ src/
+│   ├─ api/                 # All axios API calls
+│   │   └─ api.js
+│   │
+│   ├─ components/          # Reusable components
+│   │   ├─ Navbar.jsx
+│   │   └─ ProtectedRoute.jsx
+│   │
+│   ├─ context/             # Context for auth or global state
+│   │   └─ AuthContext.jsx
+│   │
+│   ├─ pages/               # All page-level components
+│   │   ├─ Dashboard.jsx
+│   │   └─ Login.jsx
+│   │
+│   ├─ App.jsx              # Main app component
+│   ├─ index.js             # Entry point (routing setup here)
+│   └─ index.css            # Global styles
+│
+├─ package.json
+└─ README.md

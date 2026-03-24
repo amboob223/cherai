@@ -1,62 +1,78 @@
-// server/server.js
 const express = require("express");
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
+const cookieParser = require("cookie-parser");
 const cors = require("cors");
-const helmet = require("helmet");
-const rateLimit = require("express-rate-limit");
-require("dotenv").config();
 
 const app = express();
-const PORT = process.env.PORT || 5000;
-
-// Security Middleware
-app.use(helmet());
-
+app.use(express.json());
+app.use(cookieParser());
 app.use(cors({
-  origin: "http://localhost:3000", // frontend URL
-  methods: ["GET", "POST", "PUT", "DELETE"],
+  origin: "http://localhost:3000",
   credentials: true
 }));
 
-app.use(express.json());
+// Simple in-memory "DB"
+const users = [];
 
-// Rate limiting (apply EARLY)
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100,
-  message: {
-    error: "Too many requests, try again later."
-  }
-});
-app.use(limiter);
+// Register
+app.post("/api/register", async (req, res) => {
+  const { username, password } = req.body;
+  if (!username || !password)
+    return res.status(400).json({ message: "All fields required" });
 
-// Import routes
-const authRoutes = require("./routes/auth");
-const userRoutes = require("./routes/users");
-const policyRoutes = require("./routes/policies");
-const tasksRoutes = require("./routes/tasks");
-const dashboardRoutes = require("./routes/dashboard");
+  const exists = users.find(u => u.username === username);
+  if (exists) return res.status(400).json({ message: "Username taken" });
 
-// Mount routes
-app.use("/api/auth", authRoutes);
-app.use("/api/users", userRoutes);
-app.use("/api/policies", policyRoutes);
-app.use("/api/dashboard", dashboardRoutes);
-app.use("/api/tasks", tasksRoutes);
+  const hashedPassword = await bcrypt.hash(password, 10);
+  users.push({ username, password: hashedPassword });
 
-// Test route
-app.get("/", (req, res) => {
-  res.send("ComplianceOS backend is running!");
+  res.status(201).json({ message: "User created" });
 });
 
-// Global error handler
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({
-    error: "Something went wrong"
+// Login
+app.post("/api/login", async (req, res) => {
+  const { username, password } = req.body;
+  const user = users.find(u => u.username === username);
+  if (!user) return res.status(401).json({ message: "Invalid credentials" });
+
+  const match = await bcrypt.compare(password, user.password);
+  if (!match) return res.status(401).json({ message: "Invalid credentials" });
+
+  const token = jwt.sign({ username }, "SUPERSECRET", { expiresIn: "1d" });
+  res.cookie("token", token, {
+    httpOnly: true,
+    secure: false, // true in production (HTTPS)
+    sameSite: "Strict",
+    maxAge: 24 * 60 * 60 * 1000,
   });
+
+  res.json({ message: "Logged in successfully" });
 });
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+// Middleware to protect routes
+const protect = (req, res, next) => {
+  const token = req.cookies.token;
+  if (!token) return res.status(401).json({ message: "Not authenticated" });
+
+  try {
+    const decoded = jwt.verify(token, "SUPERSECRET");
+    req.user = decoded;
+    next();
+  } catch {
+    res.status(401).json({ message: "Token invalid" });
+  }
+};
+
+app.post("/api/logout", (req, res) => {
+  // Clear the httpOnly cookie
+  res.clearCookie("token", { httpOnly: true, sameSite: "Strict", secure: false });
+  res.json({ message: "Logged out successfully" });
 });
+
+// Protected route example
+app.get("/api/dashboard", protect, (req, res) => {
+  res.json({ message: `Welcome ${req.user.username}!` });
+});
+
+app.listen(5000, () => console.log("Server running on port 5000"));
