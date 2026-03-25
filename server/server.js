@@ -3,46 +3,76 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
-
+const helmet = require("helmet");
+require("dotenv").config();
+const { getDashboard } = require("./controllers/dashboardController");
 const app = express();
+const pool = require("./db");
 app.use(express.json());
 app.use(cookieParser());
+app.use(helmet());
+
 app.use(cors({
-  origin: "http://localhost:3000",
+  origin: process.env.CLIENT_URL,
   credentials: true
 }));
 
-// Simple in-memory "DB"
-const users = [];
+// ⚠️ STILL TEMP (replace with DB later)
+
 
 // Register
 app.post("/api/register", async (req, res) => {
-  const { username, password } = req.body;
-  if (!username || !password)
+  const { name, email, password } = req.body;
+
+  if (!name || !email || !password)
     return res.status(400).json({ message: "All fields required" });
 
-  const exists = users.find(u => u.username === username);
-  if (exists) return res.status(400).json({ message: "Username taken" });
+  const existingUser = await pool.query(
+    "SELECT * FROM users WHERE email = $1",
+    [email]
+  );
+
+  if (existingUser.rows.length > 0)
+    return res.status(400).json({ message: "Email already exists" });
 
   const hashedPassword = await bcrypt.hash(password, 10);
-  users.push({ username, password: hashedPassword });
+
+  await pool.query(
+    "INSERT INTO users (name, email, password_hash) VALUES ($1, $2, $3)",
+    [name, email, hashedPassword]
+  );
 
   res.status(201).json({ message: "User created" });
 });
 
 // Login
 app.post("/api/login", async (req, res) => {
-  const { username, password } = req.body;
-  const user = users.find(u => u.username === username);
-  if (!user) return res.status(401).json({ message: "Invalid credentials" });
+  const { email, password } = req.body;
 
-  const match = await bcrypt.compare(password, user.password);
-  if (!match) return res.status(401).json({ message: "Invalid credentials" });
+  const userResult = await pool.query(
+    "SELECT * FROM users WHERE email = $1",
+    [email]
+  );
 
-  const token = jwt.sign({ username }, "SUPERSECRET", { expiresIn: "1d" });
+  if (userResult.rows.length === 0)
+    return res.status(401).json({ message: "Invalid credentials" });
+
+  const user = userResult.rows[0];
+
+  const match = await bcrypt.compare(password, user.password_hash);
+
+  if (!match)
+    return res.status(401).json({ message: "Invalid credentials" });
+
+  const token = jwt.sign(
+    { id: user.id, email: user.email, role: user.role },
+    process.env.JWT_SECRET,
+    { expiresIn: "1d" }
+  );
+
   res.cookie("token", token, {
     httpOnly: true,
-    secure: false, // true in production (HTTPS)
+    secure: process.env.NODE_ENV === "production",
     sameSite: "Strict",
     maxAge: 24 * 60 * 60 * 1000,
   });
@@ -50,13 +80,15 @@ app.post("/api/login", async (req, res) => {
   res.json({ message: "Logged in successfully" });
 });
 
-// Middleware to protect routes
+// Auth Middleware
 const protect = (req, res, next) => {
   const token = req.cookies.token;
-  if (!token) return res.status(401).json({ message: "Not authenticated" });
+
+  if (!token)
+    return res.status(401).json({ message: "Not authenticated" });
 
   try {
-    const decoded = jwt.verify(token, "SUPERSECRET");
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
     req.user = decoded;
     next();
   } catch {
@@ -64,15 +96,9 @@ const protect = (req, res, next) => {
   }
 };
 
-app.post("/api/logout", (req, res) => {
-  // Clear the httpOnly cookie
-  res.clearCookie("token", { httpOnly: true, sameSite: "Strict", secure: false });
-  res.json({ message: "Logged out successfully" });
-});
+// Protected Route
+app.get("/dashboard", protect, getDashboard);
 
-// Protected route example
-app.get("/api/dashboard", protect, (req, res) => {
-  res.json({ message: `Welcome ${req.user.username}!` });
-});
-
-app.listen(5000, () => console.log("Server running on port 5000"));
+app.listen(process.env.PORT || 5000, () =>
+  console.log("Server running")
+);

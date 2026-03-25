@@ -1,29 +1,28 @@
-// src/pages/Dashboard.jsx
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect, useState } from "react";
 import axios from "axios";
-import Logout from "../components/logout";
 
-export default function Dashboard() {
-  const [message, setMessage] = useState("");
-  const navigate = useNavigate();
+const Dashboard = () => {
+  const [data, setData] = useState(null);
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const res = await axios.get("http://localhost:5000/api/dashboard", { withCredentials: true });
-        setMessage(res.data.message);
-      } catch {
-        navigate("/login");
-      }
-    };
-    fetchData();
-  }, [navigate]);
+    axios.get("http://localhost:5000/dashboard", {
+      withCredentials: true // 🔥 REQUIRED
+    })
+    .then(res => setData(res.data))
+    .catch(() => {
+      window.location.href = "/login"; // 🔥 redirect if not logged in
+    });
+  }, []);
+
+  if (!data) return <p>Loading...</p>;
 
   return (
     <div>
-      <h1>{message}</h1>
-      <Logout />
+      <h1>Dashboard</h1>
+
+      <pre>{JSON.stringify(data, null, 2)}</pre>
     </div>
   );
-}
+};
+
+export default Dashboard;

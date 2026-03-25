@@ -7,14 +7,14 @@ const getDashboard = async (req, res) => {
       "SELECT COUNT(*) FROM policies"
     );
 
-    // Overdue policies (review_date passed)
+    // Overdue policies
     const overduePolicies = await pool.query(
       `SELECT COUNT(*) FROM policies
        WHERE review_date IS NOT NULL
        AND review_date < NOW()`
     );
 
-    // Open tasks (not completed)
+    // Open tasks
     const openTasks = await pool.query(
       `SELECT COUNT(*) FROM tasks
        WHERE status != 'Completed' OR status IS NULL`
@@ -27,7 +27,7 @@ const getDashboard = async (req, res) => {
        AND status != 'Completed'`
     );
 
-    // Recent audit logs (last 10)
+    // Recent audit logs
     const recentLogs = await pool.query(
       `SELECT * FROM audit_logs
        ORDER BY created_at DESC
@@ -35,11 +35,11 @@ const getDashboard = async (req, res) => {
     );
 
     res.json({
-      total_policies: parseInt(totalPolicies.rows[0].count),
-      overdue_policies: parseInt(overduePolicies.rows[0].count),
-      open_tasks: parseInt(openTasks.rows[0].count),
-      overdue_tasks: parseInt(overdueTasks.rows[0].count),
-      recent_logs: recentLogs.rows,
+      totalPolicies: parseInt(totalPolicies.rows[0].count),
+      overduePolicies: parseInt(overduePolicies.rows[0].count),
+      openTasks: parseInt(openTasks.rows[0].count),
+      overdueTasks: parseInt(overdueTasks.rows[0].count),
+      recentLogs: recentLogs.rows,
     });
 
   } catch (err) {

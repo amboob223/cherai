@@ -1,29 +1,28 @@
-// src/App.js
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Register from "./pages/register";
+import React from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Login from "./pages/login";
+
+import Sidebar from "./components/sidebar";
 import Dashboard from "./pages/Dashboard";
-import ProtectedRoute from "./components/protectedRoute";
+import Policies from "./pages/policies";
+import Tasks from "./pages/Tasks";
 
-function App() {
-  const auth = true; // TODO: replace with real JWT check
-
+const App = () => {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/register" element={<Register />} />
-        <Route path="/login" element={<Login />} />
-        <Route
-          path="/dashboard"
-          element={
-            <ProtectedRoute auth={auth}>
-              <Dashboard />
-            </ProtectedRoute>
-          }
-        />
-      </Routes>
-    </BrowserRouter>
+    <Router>
+      <div style={{ display: "flex" }}>
+        <Sidebar />
+        <div style={{ marginLeft: "200px", padding: "20px", width: "100%" }}>
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/policies" element={<Policies />} />
+  <Route path="/login" element={<Login />} />
+  <Route path="/tasks" element={<Tasks/>} />
+          </Routes>
+        </div>
+      </div>
+    </Router>
   );
-}
+};
 
 export default App;
