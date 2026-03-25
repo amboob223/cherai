@@ -1,28 +1,47 @@
-import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import ProtectedRoute from "./components/protectedRoute";
 import Login from "./pages/login";
-
-import Sidebar from "./components/sidebar";
+import Register from "./pages/register";
 import Dashboard from "./pages/Dashboard";
 import Policies from "./pages/policies";
 import Tasks from "./pages/Tasks";
 
-const App = () => {
+function App() {
   return (
     <Router>
-      <div style={{ display: "flex" }}>
-        <Sidebar />
-        <div style={{ marginLeft: "200px", padding: "20px", width: "100%" }}>
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/policies" element={<Policies />} />
-  <Route path="/login" element={<Login />} />
-  <Route path="/tasks" element={<Tasks/>} />
-          </Routes>
-        </div>
-      </div>
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+
+        <Route
+          path="/"
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/policies"
+          element={
+            <ProtectedRoute>
+              <Policies />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/tasks"
+          element={
+            <ProtectedRoute>
+              <Tasks />
+            </ProtectedRoute>
+          }
+        />
+      </Routes>
     </Router>
   );
-};
+}
 
 export default App;

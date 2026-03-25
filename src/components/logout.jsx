@@ -7,8 +7,13 @@ export default function Logout() {
 
   const handleLogout = async () => {
     try {
-      await axios.post("http://localhost:5000/api/logout", {}, { withCredentials: true });
-      navigate("/login");
+      await axios.post(
+        "http://localhost:5000/api/logout",
+        {},
+        { withCredentials: true }
+      );
+
+      navigate("/login"); // redirect after logout
     } catch (err) {
       console.error("Logout failed", err);
     }
