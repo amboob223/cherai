@@ -4,6 +4,17 @@ import axios from "axios";
 const Dashboard = () => {
   const [data, setData] = useState(null);
 
+
+  const handleLogout = async () => {
+    await axios.post(
+      "http://localhost:5000/api/logout",
+      {},
+      { withCredentials: true }
+    );
+  
+    window.location.href = "/login";
+  };
+
   useEffect(() => {
     axios.get("http://localhost:5000/dashboard", {
       withCredentials: true // 🔥 REQUIRED
@@ -19,7 +30,7 @@ const Dashboard = () => {
   return (
     <div>
       <h1>Dashboard</h1>
-
+      <button onClick={handleLogout}>Logout</button>
       <pre>{JSON.stringify(data, null, 2)}</pre>
     </div>
   );

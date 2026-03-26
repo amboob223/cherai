@@ -1,8 +1,131 @@
-// src/pages/Tasks.jsx
-import React from "react";
+import { useEffect, useState } from "react";
+import axios from "axios";
 
-const Tasks = () => {
-  return <h1>Tasks Page</h1>;
-};
+export default function Tasks() {
+  const [tasks, setTasks] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [filterUser, setFilterUser] = useState("");
 
-export default Tasks;
+  useEffect(() => {
+    fetchTasks();
+    fetchUsers();
+  }, []);
+
+  const fetchTasks = async () => {
+    try {
+      const res = await axios.get("http://localhost:5000/api/tasks", {
+        withCredentials: true,
+      });
+      setTasks(res.data);
+    } catch (err) {
+      console.error("Tasks error:", err);
+    }
+  };
+
+
+  const fetchUsers = async () => {
+    try {
+      const res = await axios.get("http://localhost:5000/api/users", {
+        withCredentials: true,
+      });
+      setUsers(res.data);
+    } catch (err) {
+      console.error("Users error:", err);
+    }
+  };
+
+  const updateTask = async (id, updatedFields) => {
+    await axios.put(
+      `http://localhost:5000/api/tasks/${id}`,
+      updatedFields,
+      { withCredentials: true }
+    )};
+
+  const isOverdue = (dueDate) => {
+    return new Date(dueDate) < new Date();
+  };
+
+  const filteredTasks = filterUser
+    ? tasks.filter((t) => t.assigned_to === filterUser)
+    : tasks;
+
+  return (
+    <div>
+      <h2>Tasks</h2>
+
+      {/* Filter */}
+      <select onChange={(e) => setFilterUser(e.target.value)}>
+        <option value="">All Users</option>
+        {users.map((user) => (
+          <option key={user.id} value={user.name}>
+            {user.name}
+          </option>
+        ))}
+      </select>
+
+      {/* Table */}
+      <table border="1">
+        <thead>
+          <tr>
+            <th>Title</th>
+            <th>Assigned</th>
+            <th>Status</th>
+            <th>Due Date</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {filteredTasks.map((task) => (
+            <tr
+              key={task.id}
+              style={{
+                backgroundColor: isOverdue(task.due_date)
+                  ? "#ffcccc"
+                  : "white",
+              }}
+            >
+              <td>{task.title}</td>
+
+              {/* Assign Dropdown */}
+              {/* Assign Dropdown */}
+<td>
+  <select
+    value={task.assigned_to}
+    onChange={(e) =>
+      updateTask(task.id, {
+        assigned_to: e.target.value, // now will be user id
+      })
+    }
+  >
+    {users.map((user) => (
+      <option key={user.id} value={user.id}>
+        {user.name}
+      </option>
+    ))}
+  </select>
+</td>
+
+              {/* Status Dropdown */}
+              <td>
+                <select
+                  value={task.status}
+                  onChange={(e) =>
+                    updateTask(task.id, {
+                      status: e.target.value,
+                    })
+                  }
+                >
+                  <option value="pending">Pending</option>
+                  <option value="in_progress">In Progress</option>
+                  <option value="done">Done</option>
+                </select>
+              </td>
+
+              <td>{task.due_date}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}

@@ -21,6 +21,23 @@ app.use(cors({
   methods: ["GET","POST","PUT","DELETE","OPTIONS"],
 }));
 
+
+// Auth middleware
+const protect = (req, res, next) => {
+  const token = req.cookies.token;
+  if (!token) return res.status(401).json({ message: "Not authenticated" });
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = decoded;
+    next();
+  } catch {
+    res.status(401).json({ message: "Token invalid" });
+  }
+};
+
+
+
 // No app.options("/*") – REMOVE IT
 
 // Routes
@@ -46,6 +63,17 @@ app.post("/api/register", async (req, res) => {
   res.status(201).json({ message: "User created" });
 });
 
+
+
+app.get("/api/users", protect, async (req, res) => {
+  try {
+    const result = await pool.query("SELECT id, name FROM users");
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
 app.post("/api/login", async (req, res) => {
   const { email, password } = req.body;
   const userResult = await pool.query("SELECT * FROM users WHERE email=$1", [email]);
@@ -79,18 +107,43 @@ app.post("/api/logout", (req, res) => {
 });
 
 // Auth middleware
-const protect = (req, res, next) => {
-  const token = req.cookies.token;
-  if (!token) return res.status(401).json({ message: "Not authenticated" });
+
+
+
+app.get("/api/tasks", protect, async (req, res) => {
+  const result = await pool.query("SELECT * FROM tasks");
+  res.json(result.rows);
+});
+
+app.put("/api/tasks/:id", protect, async (req, res) => {
+  const { id } = req.params;
+  const { assigned_to, status } = req.body;
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded;
-    next();
-  } catch {
-    res.status(401).json({ message: "Token invalid" });
+    // Get current task values
+    const current = await pool.query("SELECT * FROM tasks WHERE id = $1", [id]);
+
+    if (current.rows.length === 0) {
+      return res.status(404).json({ message: "Task not found" });
+    }
+
+    const existingTask = current.rows[0];
+
+    // Use new value OR fallback to existing
+    const newAssigned = assigned_to ?? existingTask.assigned_to;
+    const newStatus = status ?? existingTask.status;
+
+    await pool.query(
+      "UPDATE tasks SET assigned_to=$1, status=$2 WHERE id=$3",
+      [newAssigned, newStatus, id]
+    );
+
+    res.json({ message: "Task updated" });
+  } catch (err) {
+    console.error("Update error:", err);
+    res.status(500).json({ message: "Server error" });
   }
-};
+});
 
 // Protected routes
 app.get("/dashboard", protect, getDashboard);
