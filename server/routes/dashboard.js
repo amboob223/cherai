@@ -1,7 +1,9 @@
 const express = require("express");
 const router = express.Router();
-const { getDashboard } = require("../controllers/dashboardController");
 
-router.get("/", getDashboard);
+router.get("/", (req, res) => {
+  console.log("🔥 ROUTE HIT");
+  res.json({ message: "Dashboard working ✅" });
+});
 
 module.exports = router;

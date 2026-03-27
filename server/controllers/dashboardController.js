@@ -7,6 +7,13 @@ const getDashboard = async (req, res) => {
       "SELECT COUNT(*) FROM policies"
     );
 
+    const upcomingPolicies = await pool.query(`
+      SELECT * FROM policies
+      WHERE review_date > NOW()
+      ORDER BY review_date ASC
+      LIMIT 5
+    `);
+
     // Overdue policies
     const overduePolicies = await pool.query(
       `SELECT COUNT(*) FROM policies
@@ -39,6 +46,7 @@ const getDashboard = async (req, res) => {
       overduePolicies: parseInt(overduePolicies.rows[0].count),
       openTasks: parseInt(openTasks.rows[0].count),
       overdueTasks: parseInt(overdueTasks.rows[0].count),
+      upcomingPolicies: upcomingPolicies.rows,
       recentLogs: recentLogs.rows,
     });
 
@@ -46,6 +54,13 @@ const getDashboard = async (req, res) => {
     console.error(err);
     res.status(500).json({ error: "Server error" });
   }
+//   <ul>
+//   {data.upcomingPolicies.map(policy => (
+//     <li key={policy.id}>
+//       {policy.name} - {new Date(policy.review_date).toLocaleDateString()}
+//     </li>
+//   ))}
+// </ul>
 };
 
 module.exports = { getDashboard };
