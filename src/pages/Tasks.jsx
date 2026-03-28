@@ -1,3 +1,4 @@
+// File: /cherai/src/pages/Tasks.jsx
 import { useEffect, useState } from "react";
 import axios from "axios";
 
@@ -22,7 +23,6 @@ export default function Tasks() {
     }
   };
 
-
   const fetchUsers = async () => {
     try {
       const res = await axios.get("http://localhost:5000/api/users", {
@@ -34,17 +34,31 @@ export default function Tasks() {
     }
   };
 
+  // Update task and refresh state immediately
   const updateTask = async (id, updatedFields) => {
-    await axios.put(
-      `http://localhost:5000/api/tasks/${id}`,
-      updatedFields,
-      { withCredentials: true }
-    )};
+    try {
+      await axios.put(
+        `http://localhost:5000/api/tasks/${id}`,
+        updatedFields,
+        { withCredentials: true }
+      );
 
-  const isOverdue = (dueDate) => {
-    return new Date(dueDate) < new Date();
+      // Update local tasks state so UI changes instantly
+      setTasks((prevTasks) =>
+        prevTasks.map((task) =>
+          task.id === id ? { ...task, ...updatedFields } : task
+        )
+      );
+    } catch (err) {
+      console.error("Update error:", err);
+    }
   };
 
+  const isOverdue = (dueDate) => {
+    return dueDate && new Date(dueDate) < new Date();
+  };
+
+  // Filter tasks by assigned user if filter is selected
   const filteredTasks = filterUser
     ? tasks.filter((t) => t.assigned_to === filterUser)
     : tasks;
@@ -57,13 +71,13 @@ export default function Tasks() {
       <select onChange={(e) => setFilterUser(e.target.value)}>
         <option value="">All Users</option>
         {users.map((user) => (
-          <option key={user.id} value={user.name}>
+          <option key={user.id} value={user.id}>
             {user.name}
           </option>
         ))}
       </select>
 
-      {/* Table */}
+      {/* Tasks Table */}
       <table border="1">
         <thead>
           <tr>
@@ -86,42 +100,38 @@ export default function Tasks() {
             >
               <td>{task.title}</td>
 
-              {/* Assign Dropdown */}
-              {/* Assign Dropdown */}
-<td>
-  <select
-    value={task.assigned_to}
-    onChange={(e) =>
-      updateTask(task.id, {
-        assigned_to: e.target.value, // now will be user id
-      })
-    }
-  >
-    {users.map((user) => (
-      <option key={user.id} value={user.id}>
-        {user.name}
-      </option>
-    ))}
-  </select>
-</td>
+              {/* Assigned User Dropdown */}
+              <td>
+                <select
+                  value={task.assigned_to || ""}
+                  onChange={(e) =>
+                    updateTask(task.id, { assigned_to: e.target.value })
+                  }
+                >
+                  <option value="">Unassigned</option>
+                  {users.map((user) => (
+                    <option key={user.id} value={user.id}>
+                      {user.name}
+                    </option>
+                  ))}
+                </select>
+              </td>
 
               {/* Status Dropdown */}
               <td>
                 <select
-                  value={task.status}
+                  value={task.status || "pending"}
                   onChange={(e) =>
-                    updateTask(task.id, {
-                      status: e.target.value,
-                    })
+                    updateTask(task.id, { status: e.target.value })
                   }
                 >
                   <option value="pending">Pending</option>
-                  <option value="in_progress">In Progress</option>
+                  <option value="in-progress">In Progress</option>
                   <option value="done">Done</option>
                 </select>
               </td>
 
-              <td>{task.due_date}</td>
+              <td>{task.due_date || "-"}</td>
             </tr>
           ))}
         </tbody>

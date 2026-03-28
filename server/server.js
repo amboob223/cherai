@@ -38,7 +38,10 @@ const protect = (req, res, next) => {
 
 
 
-// No app.options("/*") – REMOVE IT
+const incidentRoutes = require("./routes/incidents");
+
+app.use("/api/incidents", incidentRoutes);
+
 
 // Routes
 app.post("/api/register", async (req, res) => {

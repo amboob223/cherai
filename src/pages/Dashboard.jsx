@@ -3,6 +3,7 @@ import axios from "axios";
 
 const Dashboard = () => {
   const [data, setData] = useState(null);
+  const [user, setUser] = useState(null); // store logged-in user
 
   const handleLogout = async () => {
     await axios.post(
@@ -14,21 +15,38 @@ const Dashboard = () => {
   };
 
   useEffect(() => {
-    axios.get("http://localhost:5000/dashboard", {
-      withCredentials: true
-    })
-    .then(res => setData(res.data))
-    .catch(() => {
-      window.location.href = "/login";
-    });
+    const fetchData = async () => {
+      try {
+        // Fetch dashboard data
+        const resData = await axios.get("http://localhost:5000/dashboard", { withCredentials: true });
+        setData(resData.data);
+  
+        // Fetch logged-in user info (including role)
+        const resUser = await axios.get("http://localhost:5000/api/me", { withCredentials: true });
+        setUser(resUser.data);
+      } catch (err) {
+        // If any request fails, redirect to login
+        window.location.href = "/login";
+      }
+    };
+  
+    fetchData();
   }, []);
+  if (!data || !user) return <p>Loading...</p>;
 
-  if (!data) return <p>Loading...</p>;
+  const isAdmin = user.role === "admin";
 
   return (
     <div style={{ padding: "20px" }}>
+      {/* {isAdmin && <Link to="/admin">Admin Page</Link>} */}
       <h1>Dashboard</h1>
       <button onClick={handleLogout}>Logout</button>
+
+      {isAdmin && (
+        <button>Edit Policies</button>
+      )}
+
+<pre>{JSON.stringify(data, null, 2)}</pre>
 
       {/* COUNTS */}
       <div style={{ display: "flex", gap: "20px", marginTop: "20px" }}>
