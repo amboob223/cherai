@@ -1,15 +1,17 @@
-const express = require("express");
+// server/routes/users.js
+import express from "express";
+import pool from "../db.js"; // your PostgreSQL pool
+
 const router = express.Router();
 
-const { protect } = require("../middleware/authMiddleware");
-const authorizeRoles = require("../middleware/authorizeRoles");
+router.get("/", async (req, res) => {
+  try {
+    const result = await pool.query("SELECT id, name FROM users");
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send("Server error");
+  }
+});
 
-const { getAllUsers, deleteUser } = require("../controllers/userController");
-
-// Only admin can view users
-router.get("/users", protect, authorizeRoles("admin"), getAllUsers);
-
-// Only admin can delete users
-router.delete("/users/:id", protect, authorizeRoles("admin"), deleteUser);
-
-module.exports = router;
+export default router;

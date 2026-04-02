@@ -1,3 +1,4 @@
+// server/models/Incident.js
 const pool = require("../db");
 
 class Incident {

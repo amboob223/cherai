@@ -11,6 +11,7 @@ import Incidents from "./pages/incidents";
 import Navbar from "./components/Navbar";
 
 
+
 function App() {
   const user = JSON.parse(localStorage.getItem("user")); // or use context
   const isAdmin = user?.role === "admin";
@@ -23,6 +24,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/incidents" element={<Incidents />} />
+<Route path="/dashboard" element={<Dashboard />} />
         
         {/* Protected Routes */}
         <Route

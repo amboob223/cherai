@@ -14,25 +14,31 @@ export default function Tasks() {
 
   const fetchTasks = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/tasks", {
-        withCredentials: true,
-      });
-      setTasks(res.data);
+      setTasks([
+        {
+          id: 1,
+          title: "Test Task",
+          assigned_to: "",
+          status: "pending",
+          due_date: null,
+        },
+      ]);
     } catch (err) {
       console.error("Tasks error:", err);
     }
   };
 
-  const fetchUsers = async () => {
-    try {
-      const res = await axios.get("http://localhost:5000/api/users", {
-        withCredentials: true,
-      });
-      setUsers(res.data);
-    } catch (err) {
-      console.error("Users error:", err);
-    }
-  };
+const fetchUsers = async () => {
+  try {
+    // TEMP: fake users so UI still works
+    setUsers([
+      { id: 1, name: "Alice" },
+      { id: 2, name: "Bob" },
+    ]);
+  } catch (err) {
+    console.error("Users error:", err);
+  }
+};
 
   // Update task and refresh state immediately
   const updateTask = async (id, updatedFields) => {
@@ -138,4 +144,4 @@ export default function Tasks() {
       </table>
     </div>
   );
-}
+}  
