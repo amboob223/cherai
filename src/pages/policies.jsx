@@ -4,17 +4,13 @@ import axios from "axios";
 const Policies = () => {
   const [search, setSearch] = useState("");
   const [policies, setPolicies] = useState([]);
-  const [type, setType] = useState("");
-  const [status, setStatus] = useState("");
 
   useEffect(() => {
     const fetchPolicies = async () => {
       try {
-        const res = await axios.get("http://localhost:5000/policies", {
+        const res = await axios.get("http://localhost:5000/api/policies", {
           params: {
             search: search || "",
-            type: type || "",
-            status: status || "",
           },
         });
 
@@ -26,39 +22,48 @@ const Policies = () => {
 
     const delay = setTimeout(fetchPolicies, 300);
     return () => clearTimeout(delay);
-  }, [search, type, status]);
+  }, [search]);
 
   return (
     <div style={{ padding: "20px" }}>
-      <h1>Policies Page</h1>
+      <h1>Policies</h1>
 
+      {/* Search */}
       <input
         type="text"
         placeholder="Search policies..."
         value={search}
         onChange={(e) => setSearch(e.target.value)}
-        style={{ marginBottom: "10px", padding: "8px", width: "300px" }}
+        style={{
+          marginBottom: "15px",
+          padding: "8px",
+          width: "300px",
+        }}
       />
 
-      <select onChange={(e) => setType(e.target.value)}>
-        <option value="">All Types</option>
-        <option value="HR">HR</option>
-        <option value="IT">IT</option>
-      </select>
-
-      <select onChange={(e) => setStatus(e.target.value)}>
-        <option value="">All Status</option>
-        <option value="active">Active</option>
-        <option value="inactive">Inactive</option>
-      </select>
-
-      <ul>
-        {policies.map((policy) => (
-          <li key={policy.id}>
-            <strong>{policy.title}</strong> ({policy.type} - {policy.status})
-          </li>
-        ))}
-      </ul>
+      {/* Policies List */}
+      {policies.length === 0 ? (
+        <p>No policies found.</p>
+      ) : (
+        <div style={{ display: "grid", gap: "10px" }}>
+          {policies.map((policy) => (
+            <div
+              key={policy.id}
+              style={{
+                border: "1px solid #ccc",
+                padding: "12px",
+                borderRadius: "8px",
+                background: "#f9f9f9",
+              }}
+            >
+              <h3 style={{ margin: 0 }}>{policy.title}</h3>
+              <p style={{ marginTop: "5px", color: "#555" }}>
+                {policy.description}
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

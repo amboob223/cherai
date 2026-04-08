@@ -7,64 +7,40 @@ export default function Tasks() {
   const [filterUser, setFilterUser] = useState("");
   const [search, setSearch] = useState("");
 
-  // ✅ Fetch users once
+  // ✅ Fetch users (mock for now)
   useEffect(() => {
-    fetchUsers();
+    setUsers([
+      { id: 1, name: "Alice" },
+      { id: 2, name: "Bob" },
+    ]);
   }, []);
 
+  // ✅ Fetch tasks (clean + debounced)
   useEffect(() => {
     const fetchTasks = async () => {
       try {
-        const res = await axios.get("http://localhost:5000/tasks", {
+        const res = await axios.get("http://localhost:5000/api/tasks", {
           params: {
             search: search || "",
             assigned_to: filterUser || "",
-            status: "", // add later if you want
           },
         });
-  
+
         setTasks(res.data);
       } catch (err) {
         console.error("Tasks fetch error:", err);
       }
     };
-  
+
     const delay = setTimeout(fetchTasks, 300);
-  
     return () => clearTimeout(delay);
   }, [search, filterUser]);
-
-  // ✅ Fetch tasks (with search)
-  useEffect(() => {
-    const delay = setTimeout(() => {
-      axios
-        .get("http://localhost:5000/tasks", {
-          params: { search },
-        })
-        .then((res) => setTasks(res.data))
-        .catch((err) => console.error(err));
-    }, 300); // debounce
-
-    return () => clearTimeout(delay);
-  }, [search]);
-
-  const fetchUsers = async () => {
-    try {
-      setUsers([
-        { id: 1, name: "Alice" },
-        { id: 2, name: "Bob" },
-      ]);
-    } catch (err) {
-      console.error("Users error:", err);
-    }
-  };
 
   const updateTask = async (id, updatedFields) => {
     try {
       await axios.put(
         `http://localhost:5000/api/tasks/${id}`,
-        updatedFields,
-        { withCredentials: true }
+        updatedFields
       );
 
       setTasks((prevTasks) =>
@@ -79,6 +55,12 @@ export default function Tasks() {
 
   const isOverdue = (dueDate) => {
     return dueDate && new Date(dueDate) < new Date();
+  };
+
+  const getStatusStyle = (status) => {
+    if (status === "done") return { background: "green", color: "white" };
+    if (status === "in_progress") return { background: "orange", color: "white" };
+    return { background: "gray", color: "white" };
   };
 
   const filteredTasks = filterUser
@@ -108,7 +90,7 @@ export default function Tasks() {
       />
 
       {/* Table */}
-      <table border="1" style={{ marginTop: "20px" }}>
+      <table border="1" style={{ marginTop: "20px", width: "100%" }}>
         <thead>
           <tr>
             <th>Title</th>
@@ -130,6 +112,7 @@ export default function Tasks() {
             >
               <td>{task.title}</td>
 
+              {/* Assign user */}
               <td>
                 <select
                   value={task.assigned_to || ""}
@@ -146,15 +129,17 @@ export default function Tasks() {
                 </select>
               </td>
 
+              {/* Status */}
               <td>
                 <select
                   value={task.status || "pending"}
                   onChange={(e) =>
                     updateTask(task.id, { status: e.target.value })
                   }
+                  style={getStatusStyle(task.status)}
                 >
                   <option value="pending">Pending</option>
-                  <option value="in-progress">In Progress</option>
+                  <option value="in_progress">In Progress</option>
                   <option value="done">Done</option>
                 </select>
               </td>

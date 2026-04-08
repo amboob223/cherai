@@ -1,67 +1,30 @@
-// server/routes/policies.js
 const express = require("express");
 const router = express.Router();
-const { protect } = require("../middleware/authMiddleware");
-const authorizeRoles = require("../middleware/authorizeRoles");
-const upload = require("../middleware/upload");
-const {
-  attachDocumentToPolicy,
-  getPolicies,
-  getPolicyById,
-  createPolicy,
-  updatePolicy,
-  deletePolicy,
-} = require("../controllers/policyController");
+const pool = require("../db");
 
-// Upload a file and attach to a policy
-router.post(
-  "/:id/upload",
-  protect,
-  authorizeRoles("admin", "manager"),
-  upload.single("document"),
-  attachDocumentToPolicy
-);
+// =========================
+// GET POLICIES
+// =========================
+router.get("/", async (req, res) => {
+  try {
+    const { search } = req.query;
 
-// Other policy routes
-router.get("/", protect, getPolicies);
-router.post("/", protect, authorizeRoles("admin", "manager"), createPolicy);
-router.get("/:id", protect, getPolicyById);
-router.put("/:id", protect, authorizeRoles("admin", "manager"), updatePolicy);
-router.delete("/:id", protect, authorizeRoles("admin"), deletePolicy);
+    let query = "SELECT * FROM policies WHERE 1=1";
+    const values = [];
+
+    if (search) {
+      values.push(`%${search}%`);
+      query += ` AND title ILIKE $${values.length}`;
+    }
+
+    query += " ORDER BY title ASC";
+
+    const result = await pool.query(query, values);
+    res.json(result.rows);
+  } catch (err) {
+    console.error("GET POLICIES ERROR:", err);
+    res.status(500).json({ error: "Failed to fetch policies" });
+  }
+});
 
 module.exports = router;
-
-
-
-// const express = require("express");
-// const router = express.Router();
-// const { protect } = require("../middleware/authMiddleware");
-// const authorizeRoles = require("../middleware/authorizeRoles");
-
-// const upload = require("../middlewares/upload"); // CommonJS style
-// const {
-//   attachDocumentToPolicy,
-//   getPolicies,
-//   getPolicyById,
-//   createPolicy,
-//   updatePolicy,
-//   deletePolicy,
-// } = require("../controllers/policyController");
-
-// // Upload a file and attach to a policy
-// router.post(
-//   "/:id/upload",
-//   protect,
-//   authorizeRoles("admin", "manager"), // optional: restrict uploads to certain roles
-//   upload.single("document"), // "document" is the field name in FormData
-//   attachDocumentToPolicy
-// );
-
-// // Other policy routes
-// router.get("/", protect, getPolicies);
-// router.post("/", protect, authorizeRoles("admin", "manager"), createPolicy);
-// router.get("/:id", protect, getPolicyById);
-// router.put("/:id", protect, authorizeRoles("admin", "manager"), updatePolicy);
-// router.delete("/:id", protect, authorizeRoles("admin"), deletePolicy);
-
-// module.exports = router;

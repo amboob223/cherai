@@ -13,6 +13,9 @@ const PORT = 5000;
 const SECRET = "secretkey";
 
 
+const tasksRouter = require("./routes/tasks");
+const policiesRouter = require("./routes/policies");
+
 
 // ===========================
 // REGISTER
@@ -99,13 +102,20 @@ dotenv.config();
 
 
 // Middlewares
-app.use(cors());
+app.use(
+  cors({
+    origin: "http://localhost:3000",
+    credentials: true,
+  })
+);
 app.use(express.json()); // parse JSON bodies
 
 // Routes
 app.use("/api/incidents", incidentsRouter);
 app.use("/api/auth", authRouter); // optional: login/register
-
+app.use("/api/tasks", tasksRouter);
+app.use("/api/policies", policiesRouter);
+console.log("✅ Routes loaded: /api/tasks, /api/policies");
 // Default route
 app.get("/", (req, res) => {
   res.send("Server is running");
@@ -139,10 +149,9 @@ app.use((err, req, res, next) => {
 // =========================
 // MIDDLEWARE
 // =========================
-app.use(cors({ origin: "http://localhost:3000", credentials: true }));
-app.use(express.json());
+
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
-app.use("/api/incidents", router);
+
 
 // =========================
 // FILE SETUP
