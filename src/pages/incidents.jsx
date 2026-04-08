@@ -1,116 +1,54 @@
-// src/pages/Incidents.jsx
-import React, { useState, useEffect } from "react";
-import axios from "axios";
+import React, { useEffect, useState, useCallback } from "react";
+import { getIncidents } from "../services/IncidentsService";
+import IncidentList from "../components/Incident/IncidentList";
 
 const Incidents = () => {
   const [incidents, setIncidents] = useState([]);
-  const [file, setFile] = useState(null); // ✅ INSIDE component
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const limit = 5;
 
-  const [form, setForm] = useState({
-    title: "",
-    description: "",
-    severity: "low",
-  });
-
-  // Fetch incidents
-  const fetchIncidents = async () => {
+  const fetchData = useCallback(async () => {
+    setLoading(true);
     try {
-      const res = await axios.get("http://localhost:5000/api/incidents");
-      setIncidents(res.data);
+      const data = await getIncidents(page, limit);
+      setIncidents(data.data || []);
+      setTotal(data.total || 0);
     } catch (err) {
-      console.error("Fetch error:", err);
+      console.error(err);
+      if (err.response?.status === 401) {
+        alert("Session expired, please login again");
+        window.location.href = "/login";
+      } else {
+        alert("Failed to fetch incidents. Please try again.");
+      }
+    } finally {
+      setLoading(false);
     }
-  };
+  }, [page]);
 
   useEffect(() => {
-    fetchIncidents();
-  }, []);
+    fetchData();
+  }, [fetchData]);
 
-  // Submit with file upload
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    const formData = new FormData();
-    formData.append("title", form.title);
-    formData.append("description", form.description);
-    formData.append("severity", form.severity);
-
-    if (file) {
-      formData.append("file", file);
-    }
-
-    try {
-      await axios.post("http://localhost:5000/api/incidents", formData);
-
-      // Reset form
-      setForm({ title: "", description: "", severity: "low" });
-      setFile(null);
-
-      fetchIncidents();
-    } catch (err) {
-      console.error("Upload error:", err);
-    }
-  };
+  const totalPages = Math.ceil(total / limit);
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages || 1);
+  }, [totalPages, page]);
 
   return (
-    <div style={{ padding: "20px" }}>
-      <h2>Incidents</h2>
-
-      {/* FORM */}
-      <form onSubmit={handleSubmit} style={{ marginBottom: "20px" }}>
-        <input
-          placeholder="Title"
-          value={form.title}
-          onChange={(e) => setForm({ ...form, title: e.target.value })}
-        />
-
-        <input
-          placeholder="Description"
-          value={form.description}
-          onChange={(e) => setForm({ ...form, description: e.target.value })}
-        />
-
-        <select
-          value={form.severity}
-          onChange={(e) => setForm({ ...form, severity: e.target.value })}
-        >
-          <option value="low">Low</option>
-          <option value="medium">Medium</option>
-          <option value="high">High</option>
-          <option value="critical">Critical</option>
-        </select>
-
-        {/* ✅ FILE INPUT (correct place) */}
-        <input
-          type="file"
-          onChange={(e) => setFile(e.target.files[0])}
-        />
-
-        <button type="submit">Create</button>
-      </form>
-
-      {/* INCIDENT LIST */}
-      <ul>
-        {incidents.map((i) => (
-          <li key={i.id}>
-            {i.title} - {i.severity} - {i.status || "pending"}{" "}
-            
-            {/* ✅ FILE LINK */}
-            {i.file ? (
-              <a
-                href={`http://localhost:5000/uploads/${i.file}`}
-                target="_blank"
-                rel="noreferrer"
-                style={{ marginLeft: "10px" }}
-              >
-                View File
-              </a>
-            ) : (
-              " (No file)"
-            )}
-          </li>
-        ))}
-      </ul>
+    <div>
+      <h1>Incidents</h1>
+      {loading && <p>Loading...</p>}
+      <IncidentList incidents={incidents} />
+      <button onClick={() => setPage(p => Math.max(p - 1, 1))} disabled={page === 1 || loading}>
+        Prev
+      </button>
+      <button onClick={() => setPage(p => Math.min(p + 1, totalPages))} disabled={page === totalPages || loading}>
+        Next
+      </button>
+      <p>Page {page} of {totalPages}</p>
     </div>
   );
 };

@@ -1,36 +1,36 @@
 const jwt = require("jsonwebtoken");
 
+const SECRET = "secretkey";
+
 const protect = (req, res, next) => {
-  const authHeader = req.headers.authorization;
+  let token = req.headers.authorization;
 
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return res.status(401).json({ error: "No token provided" });
-  }
-
-  const token = authHeader.split(" ")[1];
-
-  console.log("TOKEN:", token);
+  if (!token) return res.status(401).json({ message: "No token" });
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-    console.log("DECODED:", decoded);
-
-    req.user = {
-      userId: decoded.userId,
-      role: decoded.role,
-    };
-
-    next();
-  } catch (err) {
-    console.log("JWT ERROR:", err);
-
-    if (err.name === "TokenExpiredError") {
-      return res.status(401).json({ error: "Token expired" });
+    if (token.startsWith("Bearer")) {
+      token = token.split(" ")[1];
     }
 
-    return res.status(401).json({ error: "Invalid token" });
+    const decoded = jwt.verify(token, SECRET);
+    req.user = decoded;
+
+    next();
+  } catch {
+    res.status(401).json({ message: "Invalid token" });
   }
 };
 
-module.exports = { protect };
+const authorize = (...roles) => {
+  return (req, res, next) => {
+    if (!req.user || !roles.includes(req.user.role)) {
+      return res.status(403).json({ message: "Forbidden" });
+    }
+    next();
+  };
+};
+
+
+
+
+module.exports = { protect, authorize };

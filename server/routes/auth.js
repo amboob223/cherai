@@ -31,6 +31,7 @@ router.post("/register", async (req, res) => {
 });
 
 // --- LOGIN ---
+// --- LOGIN ---
 router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -51,7 +52,7 @@ router.post("/login", async (req, res) => {
       { expiresIn: "1d" }
     );
 
-    // Send token as cookie for frontend
+    // Send token as cookie for browsers
     res.cookie("token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
@@ -59,7 +60,17 @@ router.post("/login", async (req, res) => {
       maxAge: 24 * 60 * 60 * 1000, // 1 day
     });
 
-    res.json({ message: "Logged in successfully" });
+    // ✅ ALSO return token in JSON for API clients like Postman
+    res.json({
+      message: "Logged in successfully",
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+      },
+    });
+
   } catch (err) {
     console.error(err.message);
     res.status(500).send("Server error");

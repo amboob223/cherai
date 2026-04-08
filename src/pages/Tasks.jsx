@@ -1,4 +1,3 @@
-// File: /cherai/src/pages/Tasks.jsx
 import { useEffect, useState } from "react";
 import axios from "axios";
 
@@ -6,41 +5,60 @@ export default function Tasks() {
   const [tasks, setTasks] = useState([]);
   const [users, setUsers] = useState([]);
   const [filterUser, setFilterUser] = useState("");
+  const [search, setSearch] = useState("");
 
+  // ✅ Fetch users once
   useEffect(() => {
-    fetchTasks();
     fetchUsers();
   }, []);
 
-  const fetchTasks = async () => {
+  useEffect(() => {
+    const fetchTasks = async () => {
+      try {
+        const res = await axios.get("http://localhost:5000/tasks", {
+          params: {
+            search: search || "",
+            assigned_to: filterUser || "",
+            status: "", // add later if you want
+          },
+        });
+  
+        setTasks(res.data);
+      } catch (err) {
+        console.error("Tasks fetch error:", err);
+      }
+    };
+  
+    const delay = setTimeout(fetchTasks, 300);
+  
+    return () => clearTimeout(delay);
+  }, [search, filterUser]);
+
+  // ✅ Fetch tasks (with search)
+  useEffect(() => {
+    const delay = setTimeout(() => {
+      axios
+        .get("http://localhost:5000/tasks", {
+          params: { search },
+        })
+        .then((res) => setTasks(res.data))
+        .catch((err) => console.error(err));
+    }, 300); // debounce
+
+    return () => clearTimeout(delay);
+  }, [search]);
+
+  const fetchUsers = async () => {
     try {
-      setTasks([
-        {
-          id: 1,
-          title: "Test Task",
-          assigned_to: "",
-          status: "pending",
-          due_date: null,
-        },
+      setUsers([
+        { id: 1, name: "Alice" },
+        { id: 2, name: "Bob" },
       ]);
     } catch (err) {
-      console.error("Tasks error:", err);
+      console.error("Users error:", err);
     }
   };
 
-const fetchUsers = async () => {
-  try {
-    // TEMP: fake users so UI still works
-    setUsers([
-      { id: 1, name: "Alice" },
-      { id: 2, name: "Bob" },
-    ]);
-  } catch (err) {
-    console.error("Users error:", err);
-  }
-};
-
-  // Update task and refresh state immediately
   const updateTask = async (id, updatedFields) => {
     try {
       await axios.put(
@@ -49,7 +67,6 @@ const fetchUsers = async () => {
         { withCredentials: true }
       );
 
-      // Update local tasks state so UI changes instantly
       setTasks((prevTasks) =>
         prevTasks.map((task) =>
           task.id === id ? { ...task, ...updatedFields } : task
@@ -64,16 +81,15 @@ const fetchUsers = async () => {
     return dueDate && new Date(dueDate) < new Date();
   };
 
-  // Filter tasks by assigned user if filter is selected
   const filteredTasks = filterUser
-    ? tasks.filter((t) => t.assigned_to === filterUser)
+    ? tasks.filter((t) => String(t.assigned_to) === String(filterUser))
     : tasks;
 
   return (
     <div>
       <h2>Tasks</h2>
 
-      {/* Filter */}
+      {/* Filters */}
       <select onChange={(e) => setFilterUser(e.target.value)}>
         <option value="">All Users</option>
         {users.map((user) => (
@@ -83,8 +99,16 @@ const fetchUsers = async () => {
         ))}
       </select>
 
-      {/* Tasks Table */}
-      <table border="1">
+      <input
+        type="text"
+        placeholder="Search tasks..."
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        style={{ marginLeft: "10px" }}
+      />
+
+      {/* Table */}
+      <table border="1" style={{ marginTop: "20px" }}>
         <thead>
           <tr>
             <th>Title</th>
@@ -106,7 +130,6 @@ const fetchUsers = async () => {
             >
               <td>{task.title}</td>
 
-              {/* Assigned User Dropdown */}
               <td>
                 <select
                   value={task.assigned_to || ""}
@@ -123,7 +146,6 @@ const fetchUsers = async () => {
                 </select>
               </td>
 
-              {/* Status Dropdown */}
               <td>
                 <select
                   value={task.status || "pending"}
@@ -144,4 +166,4 @@ const fetchUsers = async () => {
       </table>
     </div>
   );
-}  
+}

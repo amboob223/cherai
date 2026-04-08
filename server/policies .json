@@ -1,0 +1,20 @@
+[
+    {
+      "id": 1,
+      "title": "Security Policy",
+      "type": "IT",
+      "status": "active"
+    },
+    {
+      "id": 2,
+      "title": "HR Conduct Policy",
+      "type": "HR",
+      "status": "inactive"
+    },
+    {
+      "id": 3,
+      "title": "Data Protection Policy",
+      "type": "IT",
+      "status": "active"
+    }
+  ]

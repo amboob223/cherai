@@ -1,26 +1,44 @@
-my-app/
+project-root/
 │
-├─ public/
-│   └─ index.html
+├── client/
+│   └── src/
+│       ├── components/
+│       │   └── Incident/
+│       │       ├── IncidentCard.jsx
+│       │       ├── IncidentList.jsx
+│       │       └── index.js
+│       │
+│       ├── pages/
+│       │   ├── Incidents.jsx
+│       │   └── Login.jsx
+│       │
+│       ├── services/
+│       │   ├── api.js
+│       │   └── incidentsService.js
+│       │
+│       ├── utils/
+│       │   └── helpers.js
+│       │
+│       ├── App.jsx
+│       └── index.jsx
 │
-├─ src/
-│   ├─ api/                 # All axios API calls
-│   │   └─ api.js
+├── server/
+│   ├── controllers/
+│   │   └── incidentsController.js
 │   │
-│   ├─ components/          # Reusable components
-│   │   ├─ Navbar.jsx
-│   │   └─ ProtectedRoute.jsx
+│   ├── routes/
+│   │   └── incidentsRoutes.js
 │   │
-│   ├─ context/             # Context for auth or global state
-│   │   └─ AuthContext.jsx
+│   ├── middleware/
+│   │   ├── authMiddleware.js
+│   │   └── errorHandler.js
 │   │
-│   ├─ pages/               # All page-level components
-│   │   ├─ Dashboard.jsx
-│   │   └─ Login.jsx
+│   ├── services/
+│   │   └── incidentsService.js
 │   │
-│   ├─ App.jsx              # Main app component
-│   ├─ index.js             # Entry point (routing setup here)
-│   └─ index.css            # Global styles
+│   ├── utils/
+│   │   └── fileUpload.js
+│   │
+│   └── server.js
 │
-├─ package.json
-└─ README.md
+└── package.json

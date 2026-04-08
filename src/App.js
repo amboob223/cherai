@@ -7,7 +7,7 @@ import Dashboard from "./pages/Dashboard";
 import Policies from "./pages/policies";
 import Tasks from "./pages/Tasks";
 import Admin from "./pages/admin";
-import Incidents from "./pages/incidents";
+import Incidents from "./pages/Incidents";
 import Navbar from "./components/Navbar";
 
 
@@ -23,7 +23,7 @@ function App() {
         {/* Public Routes */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        <Route path="/incidents" element={<Incidents />} />
+        <Route path="/Incidents" element={<Incidents />} />
 <Route path="/dashboard" element={<Dashboard />} />
         
         {/* Protected Routes */}

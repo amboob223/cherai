@@ -1,1 +1,33 @@
-[]
+[
+  {
+    "id": 1,
+    "name": "swim ",
+    "email": "swim@swim.com",
+    "password": "swim"
+  },
+  {
+    "id": 2,
+    "name": "you",
+    "email": "you@you.com",
+    "password": "you"
+  },
+  {
+    "id": 3,
+    "name": "head",
+    "email": "head@head.com",
+    "password": "head"
+  },
+  {
+    "id": 4,
+    "name": "monk",
+    "email": "monk@monk",
+    "password": "monk"
+  },
+  {
+    "id": 5,
+    "name": "boy",
+    "email": "boy@boy.com",
+    "password": "$2b$10$hHl6zxHSWtpKw3sW5/WTpOEAG0KarWiqJ8t/oQngehV.6wNkk2TFa",
+    "role": "user"
+  }
+]

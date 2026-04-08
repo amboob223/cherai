@@ -1,18 +1,33 @@
+const express = require("express");
+const router = express.Router();
 const pool = require("../db");
+const { protect } = require("../middleware/authMiddleware");
 
-class Incident {
-  static async getAll() {
-    const res = await pool.query("SELECT * FROM incidents ORDER BY id DESC");
-    return res.rows;
-  }
+router.get("/", protect, async (req, res) => {
+  const userId = req.user.id;
+  const limit = parseInt(req.query.limit) || 5;
+  const offset = parseInt(req.query.offset) || 0;
 
-  static async create({ title, description, severity }) {
-    const res = await pool.query(
-      "INSERT INTO incidents (title, description, severity) VALUES ($1, $2, $3) RETURNING *",
-      [title, description, severity]
+  try {
+    const totalResult = await pool.query(
+      "SELECT COUNT(*) FROM incidents WHERE user_id = $1",
+      [userId]
     );
-    return res.rows[0];
-  }
-}
+    const total = parseInt(totalResult.rows[0].count);
 
-module.exports = Incident;
+    const incidentsResult = await pool.query(
+      "SELECT id, title, description, created_at FROM incidents WHERE user_id = $1 ORDER BY created_at DESC LIMIT $2 OFFSET $3",
+      [userId, limit, offset]
+    );
+
+    res.json({
+      data: incidentsResult.rows,
+      total,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+module.exports = router;
