@@ -1,26 +1,31 @@
 const jwt = require("jsonwebtoken");
 
-const SECRET = "secretkey";
+const SECRET = process.env.JWT_SECRET || "devsecret";
 
+// =========================
+// PROTECT (AUTH MIDDLEWARE)
+// =========================
 const protect = (req, res, next) => {
-  let token = req.headers.authorization;
+  const authHeader = req.headers.authorization;
 
-  if (!token) return res.status(401).json({ message: "No token" });
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res.status(401).json({ message: "Not authorized" });
+  }
 
   try {
-    if (token.startsWith("Bearer")) {
-      token = token.split(" ")[1];
-    }
-
+    const token = authHeader.split(" ")[1];
     const decoded = jwt.verify(token, SECRET);
-    req.user = decoded;
 
+    req.user = decoded;
     next();
-  } catch {
-    res.status(401).json({ message: "Invalid token" });
+  } catch (err) {
+    return res.status(401).json({ message: "Invalid token" });
   }
 };
 
+// =========================
+// AUTHORIZE (ROLE CHECK)
+// =========================
 const authorize = (...roles) => {
   return (req, res, next) => {
     if (!req.user || !roles.includes(req.user.role)) {
@@ -30,7 +35,8 @@ const authorize = (...roles) => {
   };
 };
 
-
-
-
-module.exports = { protect, authorize };
+// ✅ EXPORT BOTH (THIS IS THE FIX)
+module.exports = {
+  protect,
+  authorize,
+};

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import api from "../api/api"; // ✅ use centralized API
 
 export default function Tasks() {
   const [tasks, setTasks] = useState([]);
@@ -7,7 +7,12 @@ export default function Tasks() {
   const [filterUser, setFilterUser] = useState("");
   const [search, setSearch] = useState("");
 
-  // ✅ Fetch users (mock for now)
+  const [newTask, setNewTask] = useState({
+    title: "",
+    description: "",
+  });
+
+  // ✅ Mock users
   useEffect(() => {
     setUsers([
       { id: 1, name: "Alice" },
@@ -15,18 +20,18 @@ export default function Tasks() {
     ]);
   }, []);
 
-  // ✅ Fetch tasks (clean + debounced)
+  // ✅ Fetch tasks (debounced)
   useEffect(() => {
     const fetchTasks = async () => {
       try {
-        const res = await axios.get("http://localhost:5000/api/tasks", {
+        const res = await api.get("/tasks", {
           params: {
             search: search || "",
             assigned_to: filterUser || "",
           },
         });
 
-        setTasks(res.data);
+        setTasks(res.data || []);
       } catch (err) {
         console.error("Tasks fetch error:", err);
       }
@@ -36,12 +41,34 @@ export default function Tasks() {
     return () => clearTimeout(delay);
   }, [search, filterUser]);
 
+  // ✅ Create task
+  const createTask = async () => {
+    if (!newTask.title.trim()) return;
+
+    try {
+      const res = await api.post("/tasks", newTask);
+
+      setTasks((prev) => [res.data, ...prev]);
+      setNewTask({ title: "", description: "" });
+    } catch (err) {
+      console.error("Create task error:", err);
+    }
+  };
+
+  // ✅ Delete task
+  const deleteTask = async (id) => {
+    try {
+      await api.delete(`/tasks/${id}`);
+      setTasks((prev) => prev.filter((t) => t.id !== id));
+    } catch (err) {
+      console.error("Delete error:", err);
+    }
+  };
+
+  // ✅ Update task
   const updateTask = async (id, updatedFields) => {
     try {
-      await axios.put(
-        `http://localhost:5000/api/tasks/${id}`,
-        updatedFields
-      );
+      await api.put(`/tasks/${id}`, updatedFields);
 
       setTasks((prevTasks) =>
         prevTasks.map((task) =>
@@ -59,7 +86,8 @@ export default function Tasks() {
 
   const getStatusStyle = (status) => {
     if (status === "done") return { background: "green", color: "white" };
-    if (status === "in_progress") return { background: "orange", color: "white" };
+    if (status === "in_progress")
+      return { background: "orange", color: "white" };
     return { background: "gray", color: "white" };
   };
 
@@ -71,7 +99,28 @@ export default function Tasks() {
     <div>
       <h2>Tasks</h2>
 
-      {/* Filters */}
+      {/* ✅ Create Task */}
+      <div style={{ marginBottom: "20px" }}>
+        <input
+          placeholder="Task title"
+          value={newTask.title}
+          onChange={(e) =>
+            setNewTask({ ...newTask, title: e.target.value })
+          }
+        />
+
+        <input
+          placeholder="Description"
+          value={newTask.description}
+          onChange={(e) =>
+            setNewTask({ ...newTask, description: e.target.value })
+          }
+        />
+
+        <button onClick={createTask}>Add Task</button>
+      </div>
+
+      {/* ✅ Filters */}
       <select onChange={(e) => setFilterUser(e.target.value)}>
         <option value="">All Users</option>
         {users.map((user) => (
@@ -89,7 +138,7 @@ export default function Tasks() {
         style={{ marginLeft: "10px" }}
       />
 
-      {/* Table */}
+      {/* ✅ Table */}
       <table border="1" style={{ marginTop: "20px", width: "100%" }}>
         <thead>
           <tr>
@@ -97,56 +146,74 @@ export default function Tasks() {
             <th>Assigned</th>
             <th>Status</th>
             <th>Due Date</th>
+            <th>Actions</th>
           </tr>
         </thead>
 
         <tbody>
-          {filteredTasks.map((task) => (
-            <tr
-              key={task.id}
-              style={{
-                backgroundColor: isOverdue(task.due_date)
-                  ? "#ffcccc"
-                  : "white",
-              }}
-            >
-              <td>{task.title}</td>
-
-              {/* Assign user */}
-              <td>
-                <select
-                  value={task.assigned_to || ""}
-                  onChange={(e) =>
-                    updateTask(task.id, { assigned_to: e.target.value })
-                  }
-                >
-                  <option value="">Unassigned</option>
-                  {users.map((user) => (
-                    <option key={user.id} value={user.id}>
-                      {user.name}
-                    </option>
-                  ))}
-                </select>
+          {filteredTasks.length === 0 ? (
+            <tr>
+              <td colSpan="5" style={{ textAlign: "center" }}>
+                No tasks found
               </td>
-
-              {/* Status */}
-              <td>
-                <select
-                  value={task.status || "pending"}
-                  onChange={(e) =>
-                    updateTask(task.id, { status: e.target.value })
-                  }
-                  style={getStatusStyle(task.status)}
-                >
-                  <option value="pending">Pending</option>
-                  <option value="in_progress">In Progress</option>
-                  <option value="done">Done</option>
-                </select>
-              </td>
-
-              <td>{task.due_date || "-"}</td>
             </tr>
-          ))}
+          ) : (
+            filteredTasks.map((task) => (
+              <tr
+                key={task.id}
+                style={{
+                  backgroundColor: isOverdue(task.due_date)
+                    ? "#ffcccc"
+                    : "white",
+                }}
+              >
+                <td>{task.title}</td>
+
+                {/* Assign */}
+                <td>
+                  <select
+                    value={task.assigned_to || ""}
+                    onChange={(e) =>
+                      updateTask(task.id, {
+                        assigned_to: Number(e.target.value),
+                      })
+                    }
+                  >
+                    <option value="">Unassigned</option>
+                    {users.map((user) => (
+                      <option key={user.id} value={user.id}>
+                        {user.name}
+                      </option>
+                    ))}
+                  </select>
+                </td>
+
+                {/* Status */}
+                <td>
+                  <select
+                    value={task.status || "pending"}
+                    onChange={(e) =>
+                      updateTask(task.id, { status: e.target.value })
+                    }
+                    style={getStatusStyle(task.status)}
+                  >
+                    <option value="pending">Pending</option>
+                    <option value="in_progress">In Progress</option>
+                    <option value="done">Done</option>
+                  </select>
+                </td>
+
+                <td>{task.due_date || "-"}</td>
+
+                {/* Delete */}
+                <td>
+                  <button onClick={() => deleteTask(task.id)}>
+                    Delete
+                  </button>
+                </td>
+              </tr>
+            ))
+          )}
         </tbody>
       </table>
     </div>

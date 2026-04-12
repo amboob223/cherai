@@ -1,6 +1,12 @@
-// src/App.jsx
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom"; // added Navigate
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
+
 import ProtectedRoute from "./components/protectedRoute";
+
 import Login from "./pages/login";
 import Register from "./pages/register";
 import Dashboard from "./pages/Dashboard";
@@ -10,25 +16,22 @@ import Admin from "./pages/admin";
 import Incidents from "./pages/Incidents";
 import Navbar from "./components/Navbar";
 
-
-
 function App() {
-  const user = JSON.parse(localStorage.getItem("user")); // or use context
+  const user = JSON.parse(localStorage.getItem("user"));
   const isAdmin = user?.role === "admin";
 
   return (
     <Router>
-        <Navbar />
+      <Navbar />
+
       <Routes>
-        {/* Public Routes */}
+        {/* ================= PUBLIC ================= */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        <Route path="/Incidents" element={<Incidents />} />
-<Route path="/dashboard" element={<Dashboard />} />
-        
-        {/* Protected Routes */}
+
+        {/* ================= PROTECTED ================= */}
         <Route
-          path="/"
+          path="/dashboard"
           element={
             <ProtectedRoute>
               <Dashboard />
@@ -37,15 +40,11 @@ function App() {
         />
 
         <Route
-          path="/admin"
+          path="/tasks"
           element={
-            isAdmin ? (
-              <ProtectedRoute>
-                <Admin />
-              </ProtectedRoute>
-            ) : (
-              <Navigate to="/" />
-            )
+            <ProtectedRoute>
+              <Tasks />
+            </ProtectedRoute>
           }
         />
 
@@ -59,16 +58,33 @@ function App() {
         />
 
         <Route
-          path="/tasks"
+          path="/incidents"
           element={
             <ProtectedRoute>
-              <Tasks />
+              <Incidents />
             </ProtectedRoute>
           }
         />
+
+        {/* ================= ADMIN ================= */}
+        <Route
+          path="/admin"
+          element={
+            isAdmin ? (
+              <ProtectedRoute>
+                <Admin />
+              </ProtectedRoute>
+            ) : (
+              <Navigate to="/dashboard" />
+            )
+          }
+        />
+
+        {/* ================= DEFAULT ================= */}
+        <Route path="/" element={<Navigate to="/dashboard" />} />
       </Routes>
     </Router>
   );
 }
 
-export default App; 
+export default App;

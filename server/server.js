@@ -5,153 +5,85 @@ const path = require("path");
 const multer = require("multer");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
-const router = require("express").Router(); // ⚠ must define router
-const { protect, authorize } = require("./middleware/authMiddleware");
-console.log("DEBUG:", protect, authorize);
-const app = express();
-const PORT = 5000;
-const SECRET = "secretkey";
-
-
-const tasksRouter = require("./routes/tasks");
-const policiesRouter = require("./routes/policies");
-
-
-// ===========================
-// REGISTER
-// ===========================
-router.post("/register", async (req, res) => {
-  const { email, password } = req.body;
-
-  if (!email || !password)
-    return res.status(400).json({ message: "Email and password required" });
-
-  try {
-    // 1️⃣ Check if user exists
-    const userCheck = await pool.query(
-      "SELECT id FROM users WHERE email = $1",
-      [email]
-    );
-    if (userCheck.rows.length > 0)
-      return res.status(400).json({ message: "User already exists" });
-
-    // 2️⃣ Hash password
-    const salt = await bcrypt.genSalt(12); // 10–12 rounds recommended
-    const hashedPassword = await bcrypt.hash(password, salt);
-
-    // 3️⃣ Insert user into DB
-    const result = await pool.query(
-      "INSERT INTO users (email, password) VALUES ($1, $2) RETURNING id, email",
-      [email, hashedPassword]
-    );
-
-    const user = result.rows[0];
-
-    // 4️⃣ Generate JWT
-    const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, {
-      expiresIn: "1h",
-    });
-
-    res.status(201).json({ token, user });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Server error" });
-  }
-});
-
-// ===========================
-// LOGIN
-// ===========================
-router.post("/login", async (req, res) => {
-  const { email, password } = req.body;
-
-  if (!email || !password)
-    return res.status(400).json({ message: "Email and password required" });
-
-  try {
-    // 1️⃣ Find user by email
-    const result = await pool.query(
-      "SELECT id, email, password FROM users WHERE email = $1",
-      [email]
-    );
-    const user = result.rows[0];
-    if (!user) return res.status(401).json({ message: "Invalid credentials" });
-
-    // 2️⃣ Compare password
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(401).json({ message: "Invalid credentials" });
-
-    // 3️⃣ Generate JWT
-    const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, {
-      expiresIn: "1h",
-    });
-
-    res.json({ token, user: { id: user.id, email: user.email } });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Server error" });
-  }
-});
-
-
 const dotenv = require("dotenv");
-const incidentsRouter = require("./routes/incidents");
-const authRouter = require("./routes/auth"); // if you have login/register routes
 
 dotenv.config();
 
+const app = express();
+const PORT = 5000;
 
-// Middlewares
+// ✅ ONE consistent secret
+const SECRET = process.env.JWT_SECRET || "devsecret";
+
+// ✅ Import middleware correctly
+const { protect, authorize } = require("./middleware/authMiddleware");
+
+console.log("DEBUG:", protect, authorize);
+
+// =========================
+// MIDDLEWARE
+// =========================
 app.use(
   cors({
     origin: "http://localhost:3000",
     credentials: true,
   })
 );
-app.use(express.json()); // parse JSON bodies
-
-// Routes
-app.use("/api/incidents", incidentsRouter);
-app.use("/api/auth", authRouter); // optional: login/register
-app.use("/api/tasks", tasksRouter);
-app.use("/api/policies", policiesRouter);
-console.log("✅ Routes loaded: /api/tasks, /api/policies");
-// Default route
-app.get("/", (req, res) => {
-  res.send("Server is running");
-});
-
-// Error handling middleware (optional but recommended)
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ message: "Server error" });
-});
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// =========================
-// MIDDLEWARE
-// =========================
-
+app.use(express.json());
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
+// const incidentsRoutes = require("./routes/incidents");
+
+app.use("/api/incidents", require("./routes/incidents"));
+
+
+
+
+
+
+// =========================
+// ROUTES (EXTERNAL)
+// =========================
+const tasksRouter = require("./routes/tasks");
+const policiesRouter = require("./routes/policies");
+// const incidentsRouter = require("./routes/incidents");
+
+// router.get("/", protect, async (req, res) => {
+//   try {
+//     const page = parseInt(req.query.page) || 1;
+//     const limit = parseInt(req.query.limit) || 5;
+//     const offset = (page - 1) * limit;
+
+//     console.log("USER:", req.user.id, "PAGE:", page);
+
+//     // ✅ Get paginated data
+//     const dataQuery = await pool.query(
+//       `SELECT * FROM incidents
+//        WHERE assigned_to = $1
+//        ORDER BY id DESC
+//        LIMIT $2 OFFSET $3`,
+//       [req.user.id, limit, offset]
+//     );
+
+//     // ✅ Get total count (important for pagination)
+//     const countQuery = await pool.query(
+//       `SELECT COUNT(*) FROM incidents WHERE assigned_to = $1`,
+//       [req.user.id]
+//     );
+
+//     res.json({
+//       data: dataQuery.rows,
+//       total: parseInt(countQuery.rows[0].count),
+//     });
+//   } catch (err) {
+//     console.error("GET incidents error:", err);
+//     res.status(500).json({ message: "Server error" });
+//   }
+// });
+
+
+
+// ❌ REMOVED broken router + postgres auth
 
 // =========================
 // FILE SETUP
@@ -164,8 +96,6 @@ const ensureFile = (filePath, defaultData = "[]") => {
 
 const dataFile = path.join(__dirname, "data", "incidents.json");
 const usersFile = path.join(__dirname, "data", "users.json");
-
-
 
 ensureFile(dataFile);
 ensureFile(usersFile);
@@ -181,10 +111,8 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 // =========================
-// AUTH ROUTES
+// AUTH ROUTES (ONLY ONE SYSTEM)
 // =========================
-
-
 
 // REGISTER
 app.post("/api/register", async (req, res) => {
@@ -203,7 +131,7 @@ app.post("/api/register", async (req, res) => {
     name,
     email,
     password: hashedPassword,
-    role: "user", // ✅ default role
+    role: "user",
   };
 
   users.push(newUser);
@@ -249,22 +177,26 @@ app.post("/api/login", async (req, res) => {
 });
 
 // =========================
-// INCIDENTS (MULTI-TENANT)
+// CURRENT USER
 // =========================
-
-// GET ONLY USER'S INCIDENTS
-app.get("/incidents", protect, (req, res) => {
-  const data = JSON.parse(fs.readFileSync(dataFile));
-
-  const userIncidents = data.filter(
-    (i) => i.createdBy === req.user.id
-  );
-
-  res.json(userIncidents);
+app.get("/api/me", protect, (req, res) => {
+  res.json(req.user);
 });
 
-// CREATE INCIDENT
-app.post("/incidents", protect, upload.single("file"), (req, res) => {
+// =========================
+// INCIDENTS (PROTECTED)
+// =========================
+// app.get("/api/incidents", protect, (req, res) => {
+//   const data = JSON.parse(fs.readFileSync(dataFile));
+
+//   const userIncidents = data.filter(
+//     (i) => i.createdBy === req.user.id
+//   );
+
+//   res.json(userIncidents);
+// });
+
+app.post("/api/incidents", protect, upload.single("file"), (req, res) => {
   const data = JSON.parse(fs.readFileSync(dataFile));
 
   const newIncident = {
@@ -284,11 +216,33 @@ app.post("/incidents", protect, upload.single("file"), (req, res) => {
 });
 
 // =========================
-// ADMIN ONLY ROUTE
+// ADMIN ROUTE
 // =========================
-app.get("/admin/users", protect, authorize("admin"), (req, res) => {
+app.get("/api/admin/users", protect, authorize("admin"), (req, res) => {
   const users = JSON.parse(fs.readFileSync(usersFile));
   res.json(users);
+});
+
+// =========================
+// OTHER ROUTES
+// =========================
+app.use("/api/tasks", tasksRouter);
+app.use("/api/policies", policiesRouter);
+
+// =========================
+// DEFAULT
+// =========================
+app.get("/", (req, res) => {
+  res.send("Server is running");
+});
+
+
+// =========================
+// ERROR HANDLER
+// =========================
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ message: "Server error" });
 });
 
 // =========================

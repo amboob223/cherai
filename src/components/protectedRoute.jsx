@@ -6,11 +6,21 @@ export default function ProtectedRoute({ children }) {
   const [isAuth, setIsAuth] = useState(null);
 
   useEffect(() => {
-    axios.get("http://localhost:5000/api/me", {
-      withCredentials: true
-    })
-    .then(() => setIsAuth(true))
-    .catch(() => setIsAuth(false));
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      setIsAuth(false);
+      return;
+    }
+
+    axios
+      .get("http://localhost:5000/api/me", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+      .then(() => setIsAuth(true))
+      .catch(() => setIsAuth(false));
   }, []);
 
   if (isAuth === null) return <p>Loading...</p>;

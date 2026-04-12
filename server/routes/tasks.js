@@ -3,14 +3,37 @@ const router = express.Router();
 const pool = require("../db");
 const { protect } = require("../middleware/authMiddleware");
 
+
 // =========================
-// GET TASKS (with optional filters)
+// CREATE TASK
 // =========================
+router.post("/", protect, async (req, res) => {
+  const { title, description, status } = req.body;
+
+  try {
+    if (!title) {
+      return res.status(400).json({ error: "Title is required" });
+    }
+
+    const result = await pool.query(
+      `INSERT INTO tasks (title, description, status)
+       VALUES ($1, $2, $3)
+       RETURNING *`,
+      [title, description || "", status || "pending"]
+    );
+
+    res.status(201).json(result.rows[0]);
+  } catch (err) {
+    console.error("CREATE TASK ERROR:", err);
+    res.status(500).json({ error: "Failed to create task" });
+  }
+});
 
 
-
-
-router.get("/", async (req, res) => {
+// =========================
+// GET TASKS (filters + search)
+// =========================
+router.get("/", protect, async (req, res) => {
   try {
     const { search, assigned_to } = req.query;
 
@@ -27,22 +50,22 @@ router.get("/", async (req, res) => {
       query += ` AND assigned_to = $${values.length}`;
     }
 
-    query += " ORDER BY created_at DESC";
+    query += " ORDER BY id DESC";
 
     const result = await pool.query(query, values);
+
     res.json(result.rows);
   } catch (err) {
     console.error("GET TASKS ERROR:", err);
-    res.status(500).json({ error: "Failed to fetch tasks" });
+    res.status(500).json({ error: err.message });
   }
 });
-
 
 
 // =========================
 // UPDATE TASK
 // =========================
-router.put("/:id", async (req, res) => {
+router.put("/:id", protect, async (req, res) => {
   const { id } = req.params;
   const fields = req.body;
 
@@ -59,7 +82,10 @@ router.put("/:id", async (req, res) => {
       .join(", ");
 
     const result = await pool.query(
-      `UPDATE tasks SET ${setQuery} WHERE id = $${keys.length + 1} RETURNING *`,
+      `UPDATE tasks
+       SET ${setQuery}
+       WHERE id = $${keys.length + 1}
+       RETURNING *`,
       [...values, id]
     );
 
@@ -67,6 +93,30 @@ router.put("/:id", async (req, res) => {
   } catch (err) {
     console.error("UPDATE TASK ERROR:", err);
     res.status(500).json({ error: "Update failed" });
+  }
+});
+
+
+// =========================
+// DELETE TASK
+// =========================
+router.delete("/:id", protect, async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const result = await pool.query(
+      "DELETE FROM tasks WHERE id = $1 RETURNING *",
+      [id]
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: "Task not found" });
+    }
+
+    res.json({ message: "Task deleted successfully" });
+  } catch (err) {
+    console.error("DELETE TASK ERROR:", err);
+    res.status(500).json({ error: "Delete failed" });
   }
 });
 

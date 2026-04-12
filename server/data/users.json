@@ -29,5 +29,26 @@
     "email": "boy@boy.com",
     "password": "$2b$10$hHl6zxHSWtpKw3sW5/WTpOEAG0KarWiqJ8t/oQngehV.6wNkk2TFa",
     "role": "user"
+  },
+  {
+    "id": 6,
+    "name": "mo",
+    "email": "mo@mo.com",
+    "password": "$2b$12$278KzcUkWI5.E.KgU9OI5.p5ukn43LdfHTydlij9ClBWCyIKwVTAK",
+    "role": "user"
+  },
+  {
+    "id": 7,
+    "name": "who",
+    "email": "who@who.com",
+    "password": "$2b$12$I/91TmIEZNCN7r6oBz24BOqvoYdfwsAtECPjn3WjqbMP2wzQNFokO",
+    "role": "user"
+  },
+  {
+    "id": 8,
+    "name": "hp",
+    "email": "hp@hp.com",
+    "password": "$2b$12$zFJeHakHWcQFzV3Ny1CAtepEhTS73320SiXZy0BmSNJWSxMTFmPvK",
+    "role": "user"
   }
 ]
