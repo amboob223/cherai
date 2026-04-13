@@ -50,5 +50,19 @@
     "email": "hp@hp.com",
     "password": "$2b$12$zFJeHakHWcQFzV3Ny1CAtepEhTS73320SiXZy0BmSNJWSxMTFmPvK",
     "role": "user"
+  },
+  {
+    "id": 9,
+    "name": "j",
+    "email": "j@j",
+    "password": "$2b$12$Nw2s3OlN0JyzFMQH4.EYfu5kCaZqdRKey6Wft.0qImkdorSdox5nW",
+    "role": "user"
+  },
+  {
+    "id": 10,
+    "name": "slow",
+    "email": "slow@slow.com",
+    "password": "$2b$12$DsqAbQU79iASPOdNlU6LyOn0SnHEDaW/gLqWljmdXX.mCxtp8CTpS",
+    "role": "user"
   }
 ]

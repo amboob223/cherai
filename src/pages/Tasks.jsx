@@ -1,11 +1,12 @@
-import { useEffect, useState } from "react";
-import api from "../api/api"; // ✅ use centralized API
+import { useEffect, useState, useCallback } from "react";
+import api from "../api/api";
 
 export default function Tasks() {
   const [tasks, setTasks] = useState([]);
   const [users, setUsers] = useState([]);
   const [filterUser, setFilterUser] = useState("");
   const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const [newTask, setNewTask] = useState({
     title: "",
@@ -20,56 +21,79 @@ export default function Tasks() {
     ]);
   }, []);
 
-  // ✅ Fetch tasks (debounced)
-  useEffect(() => {
-    const fetchTasks = async () => {
-      try {
-        const res = await api.get("/tasks", {
-          params: {
-            search: search || "",
-            assigned_to: filterUser || "",
-          },
-        });
+  // =========================
+  // ✅ CENTRAL FETCH FUNCTION
+  // =========================
+  const fetchTasks = useCallback(async () => {
+    setLoading(true);
 
-        setTasks(res.data || []);
-      } catch (err) {
-        console.error("Tasks fetch error:", err);
-      }
-    };
+    try {
+      const res = await api.get("/tasks", {
+        params: {
+          search: search || "",
+          assigned_to: filterUser || "",
+        },
+      });
 
-    const delay = setTimeout(fetchTasks, 300);
-    return () => clearTimeout(delay);
+      setTasks(res.data || []);
+    } catch (err) {
+      console.error("Tasks fetch error:", err);
+    } finally {
+      setLoading(false);
+    }
   }, [search, filterUser]);
 
-  // ✅ Create task
+  // =========================
+  // ✅ FETCH ON LOAD + CHANGE
+  // =========================
+  useEffect(() => {
+    const delay = setTimeout(() => {
+      fetchTasks();
+    }, 300);
+
+    return () => clearTimeout(delay);
+  }, [fetchTasks]);
+
+  // =========================
+  // ✅ CREATE TASK
+  // =========================
   const createTask = async () => {
     if (!newTask.title.trim()) return;
 
     try {
-      const res = await api.post("/tasks", newTask);
+      await api.post("/tasks", newTask);
 
-      setTasks((prev) => [res.data, ...prev]);
       setNewTask({ title: "", description: "" });
+
+      // 🔥 IMPORTANT: refetch instead of manual insert
+      fetchTasks();
     } catch (err) {
       console.error("Create task error:", err);
     }
   };
 
-  // ✅ Delete task
+  // =========================
+  // ✅ DELETE TASK
+  // =========================
   const deleteTask = async (id) => {
     try {
       await api.delete(`/tasks/${id}`);
-      setTasks((prev) => prev.filter((t) => t.id !== id));
+
+      // 🔥 safer: refetch instead of filtering stale state
+      fetchTasks();
     } catch (err) {
       console.error("Delete error:", err);
     }
   };
 
-  // ✅ Update task
+  // =========================
+  // ✅ UPDATE TASK
+  // =========================
   const updateTask = async (id, updatedFields) => {
     try {
       await api.put(`/tasks/${id}`, updatedFields);
 
+      // 🔥 keep UI in sync
       setTasks((prevTasks) =>
         prevTasks.map((task) =>
           task.id === id ? { ...task, ...updatedFields } : task
@@ -99,7 +123,11 @@ export default function Tasks() {
     <div>
       <h2>Tasks</h2>
 
-      {/* ✅ Create Task */}
+      {loading && <p>Loading...</p>}
+
+      {/* =========================
+          ✅ CREATE TASK
+      ========================= */}
       <div style={{ marginBottom: "20px" }}>
         <input
           placeholder="Task title"
@@ -120,7 +148,9 @@ export default function Tasks() {
         <button onClick={createTask}>Add Task</button>
       </div>
 
-      {/* ✅ Filters */}
+      {/* =========================
+          ✅ FILTERS
+      ========================= */}
       <select onChange={(e) => setFilterUser(e.target.value)}>
         <option value="">All Users</option>
         {users.map((user) => (
@@ -138,7 +168,9 @@ export default function Tasks() {
         style={{ marginLeft: "10px" }}
       />
 
-      {/* ✅ Table */}
+      {/* =========================
+          ✅ TABLE
+      ========================= */}
       <table border="1" style={{ marginTop: "20px", width: "100%" }}>
         <thead>
           <tr>

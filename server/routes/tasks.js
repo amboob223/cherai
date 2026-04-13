@@ -16,10 +16,10 @@ router.post("/", protect, async (req, res) => {
     }
 
     const result = await pool.query(
-      `INSERT INTO tasks (title, description, status)
-       VALUES ($1, $2, $3)
+      `INSERT INTO tasks (title, description, status, created_by)
+       VALUES ($1, $2, $3,$4)
        RETURNING *`,
-      [title, description || "", status || "pending"]
+       [title, description, status, req.user.id]
     );
 
     res.status(201).json(result.rows[0]);
@@ -40,14 +40,13 @@ router.get("/", protect, async (req, res) => {
     let query = "SELECT * FROM tasks WHERE 1=1";
     const values = [];
 
+    // 🔥 FORCE USER SCOPE
+    values.push(req.user.id);
+    query += ` AND created_by = $${values.length}`;
+
     if (search) {
       values.push(`%${search}%`);
       query += ` AND title ILIKE $${values.length}`;
-    }
-
-    if (assigned_to) {
-      values.push(assigned_to);
-      query += ` AND assigned_to = $${values.length}`;
     }
 
     query += " ORDER BY id DESC";
@@ -56,11 +55,10 @@ router.get("/", protect, async (req, res) => {
 
     res.json(result.rows);
   } catch (err) {
-    console.error("GET TASKS ERROR:", err);
+    console.error(err);
     res.status(500).json({ error: err.message });
   }
 });
-
 
 // =========================
 // UPDATE TASK
