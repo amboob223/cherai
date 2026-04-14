@@ -1,25 +1,30 @@
 import React, { useEffect, useState, useCallback } from "react";
-import api from "../api/api"; // ✅ use centralized API
+import api from "../api/api";
 
 const Dashboard = () => {
   const [tasks, setTasks] = useState([]);
   const [policies, setPolicies] = useState([]);
+  const [incidents, setIncidents] = useState([]);
+
   const [loading, setLoading] = useState(false);
 
   // =========================
-  // ✅ FETCH DATA (USER-SCOPED)
+  // ✅ FETCH DATA
   // =========================
   const fetchData = useCallback(async () => {
     setLoading(true);
 
     try {
-      const [tasksRes, policiesRes] = await Promise.all([
+      const [tasksRes, policiesRes, incidentsRes] = await Promise.all([
         api.get("/tasks"),
         api.get("/policies"),
+        api.get("/incidents"),
       ]);
 
+      // ✅ SAFE DATA HANDLING
       setTasks(tasksRes.data || []);
       setPolicies(policiesRes.data || []);
+      setIncidents(incidentsRes.data?.data || []); // 🔥 FIX HERE
     } catch (err) {
       console.error("Dashboard error:", err);
     } finally {
@@ -27,9 +32,6 @@ const Dashboard = () => {
     }
   }, []);
 
-  // =========================
-  // ✅ FETCH ON LOAD
-  // =========================
   useEffect(() => {
     fetchData();
   }, [fetchData]);
@@ -45,6 +47,7 @@ const Dashboard = () => {
   ).length;
 
   const totalPolicies = policies.length;
+  const totalIncidents = incidents.length;
 
   const cardStyle = {
     flex: 1,
@@ -62,7 +65,7 @@ const Dashboard = () => {
       {loading && <p>Loading...</p>}
 
       {/* =========================
-          📊 STATS ROW
+          📊 STATS
       ========================= */}
       <div style={{ display: "flex", gap: "15px", marginBottom: "30px" }}>
         <div style={{ ...cardStyle, background: "#4CAF50" }}>
@@ -89,6 +92,11 @@ const Dashboard = () => {
           <h2>{totalPolicies}</h2>
           <p>Policies</p>
         </div>
+
+        <div style={{ ...cardStyle, background: "#f44336" }}>
+          <h2>{totalIncidents}</h2>
+          <p>Incidents</p>
+        </div>
       </div>
 
       {/* =========================
@@ -114,41 +122,39 @@ const Dashboard = () => {
                 </td>
               </tr>
             ) : (
-              tasks.slice(0, 5).map((task) => (
-                <tr key={task.id}>
-                  <td>{task.title}</td>
+              tasks.slice(0, 5).map((task) => {
+                const status = task.status || "pending";
 
-                  <td>
-  {(() => {
-    const status = task.status || "pending";
+                return (
+                  <tr key={task.id}>
+                    <td>{task.title}</td>
 
-    return (
-      <span
-        style={{
-          padding: "4px 8px",
-          borderRadius: "5px",
-          color: "white",
-          background:
-            status === "done"
-              ? "green"
-              : status === "in_progress"
-              ? "orange"
-              : "gray",
-        }}
-      >
-        {status.replace("_", " ")}
-      </span>
-    );
-  })()}
-</td>
+                    <td>
+                      <span
+                        style={{
+                          padding: "4px 8px",
+                          borderRadius: "5px",
+                          color: "white",
+                          background:
+                            status === "done"
+                              ? "green"
+                              : status === "in_progress"
+                              ? "orange"
+                              : "gray",
+                        }}
+                      >
+                        {status.replace("_", " ")}
+                      </span>
+                    </td>
 
-                  <td>
-                    {task.created_at
-                      ? new Date(task.created_at).toLocaleDateString()
-                      : "-"}
-                  </td>
-                </tr>
-              ))
+                    <td>
+                      {task.created_at
+                        ? new Date(task.created_at).toLocaleDateString()
+                        : "-"}
+                    </td>
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>
