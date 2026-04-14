@@ -64,5 +64,12 @@
     "email": "slow@slow.com",
     "password": "$2b$12$DsqAbQU79iASPOdNlU6LyOn0SnHEDaW/gLqWljmdXX.mCxtp8CTpS",
     "role": "user"
+  },
+  {
+    "id": 11,
+    "name": "man",
+    "email": "man@man.com",
+    "password": "$2b$12$o2aShNTcZhFJ7LUOs3TFjOv8aVMEsUZ8.AhD.nOsOkquYTFhxu2vS",
+    "role": "user"
   }
 ]

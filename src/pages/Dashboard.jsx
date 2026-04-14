@@ -1,35 +1,48 @@
-import React, { useEffect, useState } from "react";
-import axios from "axios";
+import React, { useEffect, useState, useCallback } from "react";
+import api from "../api/api"; // ✅ use centralized API
 
 const Dashboard = () => {
   const [tasks, setTasks] = useState([]);
   const [policies, setPolicies] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const tasksRes = await axios.get("http://localhost:5000/api/tasks");
-        setTasks(tasksRes.data);
-      } catch (err) {
-        console.error("Tasks error:", err);
-      }
-    
-      try {
-        const policiesRes = await axios.get("http://localhost:5000/api/policies");
-        setPolicies(policiesRes.data);
-      } catch (err) {
-        console.error("Policies error:", err);
-      }
-    };
+  // =========================
+  // ✅ FETCH DATA (USER-SCOPED)
+  // =========================
+  const fetchData = useCallback(async () => {
+    setLoading(true);
 
-    fetchData();
+    try {
+      const [tasksRes, policiesRes] = await Promise.all([
+        api.get("/tasks"),
+        api.get("/policies"),
+      ]);
+
+      setTasks(tasksRes.data || []);
+      setPolicies(policiesRes.data || []);
+    } catch (err) {
+      console.error("Dashboard error:", err);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  // 📊 Stats
+  // =========================
+  // ✅ FETCH ON LOAD
+  // =========================
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  // =========================
+  // 📊 STATS
+  // =========================
   const totalTasks = tasks.length;
-  const completedTasks = tasks.filter(t => t.status === "done").length;
-  const pendingTasks = tasks.filter(t => t.status === "pending").length;
-  const inProgressTasks = tasks.filter(t => t.status === "in_progress").length;
+  const completedTasks = tasks.filter((t) => t.status === "done").length;
+  const pendingTasks = tasks.filter((t) => t.status === "pending").length;
+  const inProgressTasks = tasks.filter(
+    (t) => t.status === "in_progress"
+  ).length;
 
   const totalPolicies = policies.length;
 
@@ -46,7 +59,11 @@ const Dashboard = () => {
     <div style={{ padding: "20px" }}>
       <h1>Dashboard</h1>
 
-      {/* 📊 Stats Row */}
+      {loading && <p>Loading...</p>}
+
+      {/* =========================
+          📊 STATS ROW
+      ========================= */}
       <div style={{ display: "flex", gap: "15px", marginBottom: "30px" }}>
         <div style={{ ...cardStyle, background: "#4CAF50" }}>
           <h2>{totalTasks}</h2>
@@ -74,7 +91,9 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* 📋 Recent Tasks */}
+      {/* =========================
+          📋 RECENT TASKS
+      ========================= */}
       <div>
         <h2>Recent Tasks</h2>
 
@@ -88,33 +107,49 @@ const Dashboard = () => {
           </thead>
 
           <tbody>
-            {tasks.slice(0, 5).map((task) => (
-              <tr key={task.id}>
-                <td>{task.title}</td>
-                <td>
-                  <span
-                    style={{
-                      padding: "4px 8px",
-                      borderRadius: "5px",
-                      color: "white",
-                      background:
-                        task.status === "done"
-                          ? "green"
-                          : task.status === "in_progress"
-                          ? "orange"
-                          : "gray",
-                    }}
-                  >
-                    {task.status.replace("_", " ")}
-                  </span>
-                </td>
-                <td>
-                  {task.created_at
-                    ? new Date(task.created_at).toLocaleDateString()
-                    : "-"}
+            {tasks.length === 0 ? (
+              <tr>
+                <td colSpan="3" style={{ textAlign: "center" }}>
+                  No tasks yet
                 </td>
               </tr>
-            ))}
+            ) : (
+              tasks.slice(0, 5).map((task) => (
+                <tr key={task.id}>
+                  <td>{task.title}</td>
+
+                  <td>
+  {(() => {
+    const status = task.status || "pending";
+
+    return (
+      <span
+        style={{
+          padding: "4px 8px",
+          borderRadius: "5px",
+          color: "white",
+          background:
+            status === "done"
+              ? "green"
+              : status === "in_progress"
+              ? "orange"
+              : "gray",
+        }}
+      >
+        {status.replace("_", " ")}
+      </span>
+    );
+  })()}
+</td>
+
+                  <td>
+                    {task.created_at
+                      ? new Date(task.created_at).toLocaleDateString()
+                      : "-"}
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>

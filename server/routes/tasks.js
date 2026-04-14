@@ -8,18 +8,24 @@ const { protect } = require("../middleware/authMiddleware");
 // CREATE TASK
 // =========================
 router.post("/", protect, async (req, res) => {
-  const { title, description, status } = req.body;
+  let { title, description, status } = req.body;
 
   try {
     if (!title) {
       return res.status(400).json({ error: "Title is required" });
     }
 
+    // 🔥 FORCE DEFAULT STATUS
+    const validStatuses = ["pending", "in_progress", "done"];
+    if (!validStatuses.includes(status)) {
+      status = "pending";
+    }
+
     const result = await pool.query(
       `INSERT INTO tasks (title, description, status, created_by)
-       VALUES ($1, $2, $3,$4)
+       VALUES ($1, $2, $3, $4)
        RETURNING *`,
-       [title, description, status, req.user.id]
+      [title, description || "", status, req.user.id]
     );
 
     res.status(201).json(result.rows[0]);
@@ -35,14 +41,10 @@ router.post("/", protect, async (req, res) => {
 // =========================
 router.get("/", protect, async (req, res) => {
   try {
-    const { search, assigned_to } = req.query;
+    const { search } = req.query;
 
-    let query = "SELECT * FROM tasks WHERE 1=1";
-    const values = [];
-
-    // 🔥 FORCE USER SCOPE
-    values.push(req.user.id);
-    query += ` AND created_by = $${values.length}`;
+    let query = "SELECT * FROM tasks WHERE created_by = $1";
+    const values = [req.user.id];
 
     if (search) {
       values.push(`%${search}%`);
@@ -53,12 +55,19 @@ router.get("/", protect, async (req, res) => {
 
     const result = await pool.query(query, values);
 
-    res.json(result.rows);
+    // 🔥 SANITIZE DATA BEFORE SENDING
+    const safeRows = result.rows.map((task) => ({
+      ...task,
+      status: task.status || "pending",
+    }));
+
+    res.json(safeRows);
   } catch (err) {
-    console.error(err);
+    console.error("GET TASKS ERROR:", err);
     res.status(500).json({ error: err.message });
   }
 });
+
 
 // =========================
 // UPDATE TASK
@@ -75,6 +84,14 @@ router.put("/:id", protect, async (req, res) => {
       return res.status(400).json({ error: "No fields to update" });
     }
 
+    // 🔥 VALIDATE STATUS IF BEING UPDATED
+    if (fields.status) {
+      const validStatuses = ["pending", "in_progress", "done"];
+      if (!validStatuses.includes(fields.status)) {
+        fields.status = "pending";
+      }
+    }
+
     const setQuery = keys
       .map((key, index) => `${key} = $${index + 1}`)
       .join(", ");
@@ -84,10 +101,13 @@ router.put("/:id", protect, async (req, res) => {
        SET ${setQuery}
        WHERE id = $${keys.length + 1}
        RETURNING *`,
-      [...values, id]
+      [...Object.values(fields), id]
     );
 
-    res.json(result.rows[0]);
+    res.json({
+      ...result.rows[0],
+      status: result.rows[0]?.status || "pending",
+    });
   } catch (err) {
     console.error("UPDATE TASK ERROR:", err);
     res.status(500).json({ error: "Update failed" });
