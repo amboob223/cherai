@@ -1,18 +1,28 @@
 const express = require("express");
 const router = express.Router();
-const bcrypt = require("bcrypt");
+const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const pool = require("../db");
 
-// --- REGISTER ---
+const SECRET = process.env.JWT_SECRET || "devsecret";
+
+// =========================
+// REGISTER
+// =========================
 router.post("/register", async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
+    let { name, email, password } = req.body;
 
-    // Check if user exists
-    const existing = await pool.query("SELECT * FROM users WHERE email=$1", [email]);
-    if (existing.rows.length > 0)
-      return res.status(400).json({ message: "User exists" });
+    email = email.toLowerCase().trim();
+
+    const existing = await pool.query(
+      "SELECT * FROM users WHERE email=$1",
+      [email]
+    );
+
+    if (existing.rows.length > 0) {
+      return res.status(400).json({ message: "User already exists" });
+    }
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -20,71 +30,69 @@ router.post("/register", async (req, res) => {
       `INSERT INTO users (name, email, password_hash, role)
        VALUES ($1, $2, $3, $4)
        RETURNING id, name, email, role`,
-      [name, email, hashedPassword, role || "employee"]
+      [name, email, hashedPassword, "user"]
     );
 
-    res.status(201).json(newUser.rows[0]);
+    const user = newUser.rows[0];
+
+    const token = jwt.sign(
+      { id: user.id, email: user.email, role: user.role },
+      SECRET,
+      { expiresIn: "8h" }
+    );
+
+    res.json({ token, user });
   } catch (err) {
-    console.error(err.message);
-    res.status(500).send("Server error");
+    console.error("REGISTER ERROR:", err);
+    res.status(500).json({ message: "Server error" });
   }
 });
 
-// --- LOGIN ---
-// --- LOGIN ---
+// =========================
+// LOGIN
+// =========================
 router.post("/login", async (req, res) => {
   try {
-    const { email, password } = req.body;
+    let { email, password } = req.body;
 
-    const userQuery = await pool.query("SELECT * FROM users WHERE email=$1", [email]);
-    if (userQuery.rows.length === 0)
-      return res.status(401).json({ message: "Invalid credentials" });
+    email = email.toLowerCase().trim();
 
-    const user = userQuery.rows[0];
-    const validPassword = await bcrypt.compare(password, user.password_hash);
-    if (!validPassword)
-      return res.status(401).json({ message: "Invalid credentials" });
-
-    // Include role in token for RBAC
-    const token = jwt.sign(
-      { userId: user.id, role: user.role },
-      process.env.JWT_SECRET,
-      { expiresIn: "1d" }
+    const result = await pool.query(
+      "SELECT * FROM users WHERE email=$1",
+      [email]
     );
 
-    // Send token as cookie for browsers
-    res.cookie("token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "Strict",
-      maxAge: 24 * 60 * 60 * 1000, // 1 day
-    });
+    if (result.rows.length === 0) {
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
 
-    // ✅ ALSO return token in JSON for API clients like Postman
+    const user = result.rows[0];
+
+    const match = await bcrypt.compare(password, user.password_hash);
+
+    if (!match) {
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
+
+    const token = jwt.sign(
+      { id: user.id, email: user.email, role: user.role },
+      SECRET,
+      { expiresIn: "8h" }
+    );
+
     res.json({
-      message: "Logged in successfully",
       token,
       user: {
         id: user.id,
         email: user.email,
+        name: user.name,
         role: user.role,
       },
     });
-
   } catch (err) {
-    console.error(err.message);
-    res.status(500).send("Server error");
+    console.error("LOGIN ERROR:", err);
+    res.status(500).json({ message: "Server error" });
   }
-});
-
-// --- LOGOUT ---
-router.post("/logout", (req, res) => {
-  res.clearCookie("token", {
-    httpOnly: true,
-    sameSite: "Strict",
-    secure: process.env.NODE_ENV === "production",
-  });
-  res.json({ message: "Logged out" });
 });
 
 module.exports = router;

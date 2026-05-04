@@ -1,12 +1,10 @@
-// server/routes/users.js
-import express from "express";
-import pool from "../db.js"; // your PostgreSQL pool
-
+const express = require("express");
 const router = express.Router();
+const pool = require("../db");
 
 router.get("/", async (req, res) => {
   try {
-    const result = await pool.query("SELECT id, name FROM users");
+    const result = await pool.query("SELECT id, name, role FROM users");
     res.json(result.rows);
   } catch (err) {
     console.error(err.message);
@@ -14,4 +12,4 @@ router.get("/", async (req, res) => {
   }
 });
 
-export default router;
+module.exports = router;

@@ -5,6 +5,9 @@ import {
   Navigate,
 } from "react-router-dom";
 
+import { useContext } from "react";
+import { AuthContext } from "./context/AuthContext";
+
 import ProtectedRoute from "./components/protectedRoute";
 
 import Login from "./pages/login";
@@ -17,7 +20,10 @@ import Incidents from "./pages/Incidents";
 import Navbar from "./components/Navbar";
 
 function App() {
-  const user = JSON.parse(localStorage.getItem("user"));
+  const { user, loading } = useContext(AuthContext);
+
+  if (loading) return <p>Loading...</p>;
+
   const isAdmin = user?.role === "admin";
 
   return (
@@ -26,8 +32,14 @@ function App() {
 
       <Routes>
         {/* ================= PUBLIC ================= */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
+        <Route
+          path="/login"
+          element={user ? <Navigate to="/dashboard" /> : <Login />}
+        />
+        <Route
+          path="/register"
+          element={user ? <Navigate to="/dashboard" /> : <Register />}
+        />
 
         {/* ================= PROTECTED ================= */}
         <Route
@@ -70,18 +82,17 @@ function App() {
         <Route
           path="/admin"
           element={
-            isAdmin ? (
-              <ProtectedRoute>
-                <Admin />
-              </ProtectedRoute>
-            ) : (
-              <Navigate to="/dashboard" />
-            )
+            <ProtectedRoute>
+              {isAdmin ? <Admin /> : <Navigate to="/dashboard" />}
+            </ProtectedRoute>
           }
         />
 
         {/* ================= DEFAULT ================= */}
-        <Route path="/" element={<Navigate to="/dashboard" />} />
+        <Route
+          path="/"
+          element={<Navigate to={user ? "/dashboard" : "/login"} />}
+        />
       </Routes>
     </Router>
   );

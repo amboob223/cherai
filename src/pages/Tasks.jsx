@@ -13,16 +13,26 @@ export default function Tasks() {
     description: "",
   });
 
-  // ✅ Mock users
+  const currentUser = JSON.parse(localStorage.getItem("user"));
+
+  // =========================
+  // USERS (REAL DB)
+  // =========================
   useEffect(() => {
-    setUsers([
-      { id: 1, name: "Alice" },
-      { id: 2, name: "Bob" },
-    ]);
+    const fetchUsers = async () => {
+      try {
+        const res = await api.get("/users");
+        setUsers(res.data || []);
+      } catch (err) {
+        console.error("Users fetch error:", err);
+      }
+    };
+
+    fetchUsers();
   }, []);
 
   // =========================
-  // ✅ CENTRAL FETCH FUNCTION
+  // TASKS FETCH
   // =========================
   const fetchTasks = useCallback(async () => {
     setLoading(true);
@@ -43,29 +53,24 @@ export default function Tasks() {
     }
   }, [search, filterUser]);
 
-  // =========================
-  // ✅ FETCH ON LOAD + CHANGE
-  // =========================
   useEffect(() => {
-    const delay = setTimeout(() => {
-      fetchTasks();
-    }, 300);
-
+    const delay = setTimeout(() => fetchTasks(), 300);
     return () => clearTimeout(delay);
   }, [fetchTasks]);
 
   // =========================
-  // ✅ CREATE TASK
+  // CREATE TASK
   // =========================
   const createTask = async () => {
     if (!newTask.title.trim()) return;
 
     try {
-      await api.post("/tasks", newTask);
+      await api.post("/tasks", {
+        ...newTask,
+        assigned_to: null, // explicit UUID-safe default
+      });
 
       setNewTask({ title: "", description: "" });
-
-      // 🔥 IMPORTANT: refetch instead of manual insert
       fetchTasks();
     } catch (err) {
       console.error("Create task error:", err);
@@ -73,13 +78,11 @@ export default function Tasks() {
   };
 
   // =========================
-  // ✅ DELETE TASK
+  // DELETE
   // =========================
   const deleteTask = async (id) => {
     try {
       await api.delete(`/tasks/${id}`);
-
-      // 🔥 safer: refetch instead of filtering stale state
       fetchTasks();
     } catch (err) {
       console.error("Delete error:", err);
@@ -87,15 +90,14 @@ export default function Tasks() {
   };
 
   // =========================
-  // ✅ UPDATE TASK
+  // UPDATE TASK (UUID SAFE)
   // =========================
   const updateTask = async (id, updatedFields) => {
     try {
       await api.put(`/tasks/${id}`, updatedFields);
 
-      // 🔥 keep UI in sync
-      setTasks((prevTasks) =>
-        prevTasks.map((task) =>
+      setTasks((prev) =>
+        prev.map((task) =>
           task.id === id ? { ...task, ...updatedFields } : task
         )
       );
@@ -104,9 +106,8 @@ export default function Tasks() {
     }
   };
 
-  const isOverdue = (dueDate) => {
-    return dueDate && new Date(dueDate) < new Date();
-  };
+  const isOverdue = (dueDate) =>
+    dueDate && new Date(dueDate) < new Date();
 
   const getStatusStyle = (status) => {
     if (status === "done") return { background: "green", color: "white" };
@@ -125,9 +126,7 @@ export default function Tasks() {
 
       {loading && <p>Loading...</p>}
 
-      {/* =========================
-          ✅ CREATE TASK
-      ========================= */}
+      {/* CREATE */}
       <div style={{ marginBottom: "20px" }}>
         <input
           placeholder="Task title"
@@ -148,9 +147,7 @@ export default function Tasks() {
         <button onClick={createTask}>Add Task</button>
       </div>
 
-      {/* =========================
-          ✅ FILTERS
-      ========================= */}
+      {/* FILTER */}
       <select onChange={(e) => setFilterUser(e.target.value)}>
         <option value="">All Users</option>
         {users.map((user) => (
@@ -161,16 +158,13 @@ export default function Tasks() {
       </select>
 
       <input
-        type="text"
         placeholder="Search tasks..."
         value={search}
         onChange={(e) => setSearch(e.target.value)}
         style={{ marginLeft: "10px" }}
       />
 
-      {/* =========================
-          ✅ TABLE
-      ========================= */}
+      {/* TABLE */}
       <table border="1" style={{ marginTop: "20px", width: "100%" }}>
         <thead>
           <tr>
@@ -201,26 +195,31 @@ export default function Tasks() {
               >
                 <td>{task.title}</td>
 
-                {/* Assign */}
+                {/* ASSIGN (FIXED: NO Number()) */}
                 <td>
-                  <select
-                    value={task.assigned_to || ""}
-                    onChange={(e) =>
-                      updateTask(task.id, {
-                        assigned_to: Number(e.target.value),
-                      })
-                    }
-                  >
-                    <option value="">Unassigned</option>
-                    {users.map((user) => (
-                      <option key={user.id} value={user.id}>
-                        {user.name}
-                      </option>
-                    ))}
-                  </select>
+                  {currentUser?.role === "admin" ? (
+                    <select
+                      value={task.assigned_to || ""}
+                      onChange={(e) =>
+                        updateTask(task.id, {
+                          assigned_to: e.target.value || null,
+                        })
+                      }
+                    >
+                      <option value="">Unassigned</option>
+                      {users.map((user) => (
+                        <option key={user.id} value={user.id}>
+                          {user.name}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    users.find((u) => u.id === task.assigned_to)?.name ||
+                    "Unassigned"
+                  )}
                 </td>
 
-                {/* Status */}
+                {/* STATUS */}
                 <td>
                   <select
                     value={task.status || "pending"}
@@ -237,7 +236,6 @@ export default function Tasks() {
 
                 <td>{task.due_date || "-"}</td>
 
-                {/* Delete */}
                 <td>
                   <button onClick={() => deleteTask(task.id)}>
                     Delete

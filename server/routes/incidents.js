@@ -3,7 +3,9 @@ const router = express.Router();
 const pool = require("../db");
 const { protect } = require("../middleware/authMiddleware");
 
-// GET incidents
+// =========================
+// GET INCIDENTS (FIXED UUID)
+// =========================
 router.get("/", protect, async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
@@ -12,18 +14,19 @@ router.get("/", protect, async (req, res) => {
 
     console.log("USER:", req.user.id, "PAGE:", page);
 
-    // ✅ Get paginated data
     const dataQuery = await pool.query(
-      `SELECT * FROM incidents
-       WHERE assigned_to = $1
-       ORDER BY id DESC
+      `SELECT *
+       FROM incidents
+       WHERE user_id = $1::uuid
+       ORDER BY created_at DESC
        LIMIT $2 OFFSET $3`,
       [req.user.id, limit, offset]
     );
 
-    // ✅ Get total count (important for pagination)
     const countQuery = await pool.query(
-      `SELECT COUNT(*) FROM incidents WHERE assigned_to = $1`,
+      `SELECT COUNT(*)
+       FROM incidents
+       WHERE user_id = $1::uuid`,
       [req.user.id]
     );
 
@@ -31,39 +34,45 @@ router.get("/", protect, async (req, res) => {
       data: dataQuery.rows,
       total: parseInt(countQuery.rows[0].count),
     });
+
   } catch (err) {
     console.error("GET incidents error:", err);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ message: err.message });
   }
 });
 
-// CREATE incident
+// =========================
+// CREATE INCIDENT (FIXED)
+// =========================
 router.post("/", protect, async (req, res) => {
   const { title, description, severity } = req.body;
 
   try {
     const result = await pool.query(
-      `INSERT INTO incidents (title, description, severity, status, assigned_to)
-       VALUES ($1, $2, $3, $4, $5)
+      `INSERT INTO incidents (title, description, severity, user_id)
+       VALUES ($1, $2, $3, $4::uuid)
        RETURNING *`,
-      [title, description, severity, "pending", req.user.id]
+      [title, description, severity, req.user.id]
     );
 
     res.status(201).json(result.rows[0]);
+
   } catch (err) {
     console.error("POST incident error:", err);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ message: err.message });
   }
 });
 
-//delete 
+// =========================
+// DELETE INCIDENT (FIXED)
+// =========================
 router.delete("/:id", protect, async (req, res) => {
   try {
     const { id } = req.params;
 
     const result = await pool.query(
       `DELETE FROM incidents
-       WHERE id = $1 AND assigned_to = $2
+       WHERE id = $1::uuid AND user_id = $2::uuid
        RETURNING *`,
       [id, req.user.id]
     );
@@ -73,9 +82,11 @@ router.delete("/:id", protect, async (req, res) => {
     }
 
     res.json({ message: "Incident deleted successfully" });
+
   } catch (err) {
     console.error("DELETE error:", err);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ message: err.message });
   }
 });
+
 module.exports = router;

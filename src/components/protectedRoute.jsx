@@ -1,29 +1,20 @@
-import { useEffect, useState } from "react";
-import axios from "axios";
+import React, { useContext } from "react";
 import { Navigate } from "react-router-dom";
+import { AuthContext } from "../context/AuthContext";
 
-export default function ProtectedRoute({ children }) {
-  const [isAuth, setIsAuth] = useState(null);
+const ProtectedRoute = ({ children }) => {
+  const { user, loading } = useContext(AuthContext);
 
-  useEffect(() => {
-    const token = localStorage.getItem("token");
+  const token = localStorage.getItem("token");
 
-    if (!token) {
-      setIsAuth(false);
-      return;
-    }
+  if (loading) return <p>Loading...</p>;
 
-    axios
-      .get("http://localhost:5000/api/me", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
-      .then(() => setIsAuth(true))
-      .catch(() => setIsAuth(false));
-  }, []);
+  // ✅ FIX: check BOTH user + token
+  if (!user || !token) {
+    return <Navigate to="/login" replace />;
+  }
 
-  if (isAuth === null) return <p>Loading...</p>;
+  return children;
+};
 
-  return isAuth ? children : <Navigate to="/login" />;
-}
+export default ProtectedRoute;

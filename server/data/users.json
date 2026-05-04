@@ -71,5 +71,61 @@
     "email": "man@man.com",
     "password": "$2b$12$o2aShNTcZhFJ7LUOs3TFjOv8aVMEsUZ8.AhD.nOsOkquYTFhxu2vS",
     "role": "user"
+  },
+  {
+    "id": 12,
+    "name": "worm",
+    "email": "worm@worm",
+    "password": "$2b$12$wAmp.QlOnEZmdd5.RFG7WuxyQPCL0NE02i2QjpNs/1LRemcYvdrMO",
+    "role": "user"
+  },
+  {
+    "id": 13,
+    "name": "who",
+    "email": "who@who",
+    "password": "$2b$12$Rhi7b/EC95Oz3kxPpnP3YOkNNSd6wYsdj9Wv7l0uCVhi2NR.qbfzi",
+    "role": "user"
+  },
+  {
+    "id": 14,
+    "name": "Admin",
+    "email": "admin@test.com",
+    "password": "$2b$12$r3RQ7vAOKePQG2sXjRLIhuI/tKnoHqETprmBWZI85cBGcNEZfJ/De",
+    "role": "user"
+  },
+  {
+    "id": 15,
+    "name": "Employee",
+    "email": "user@test.com",
+    "password": "$2b$12$URV7BktUUeoz/anLOcSbgunwrLubTK/9SvLiZuSNxray6LU.7NKJy",
+    "role": "user"
+  },
+  {
+    "id": 16,
+    "name": "kill",
+    "email": "kil@kill.com",
+    "password": "$2b$12$PBYkikOdOIJbDEmSGbxIEeAAJ.jBPUmZX4QR5vgmvKmouyEZfpel.",
+    "role": "user"
+  },
+  {
+    "id": 17,
+    "name": "turn",
+    "email": "turn@turn.com",
+    "password": "$2b$12$6P2Vthy8aJPOXy7gjp6XGedkEzUAZSrnnaQJXI1iTufn1g2mMxFr6",
+    "role": "user"
+  },
+  {
+    "id": 18,
+    "name": "swang",
+    "email": "swang@swang",
+    "password": "$2b$12$YCucNrBHPG15yVfY8QO01ujbbm1UxhrwzglyTqwceperi9ENBSosq",
+    "role": "user"
+  },
+  {
+    "id": 19,
+    "name": "boo",
+    "email": "boo@boo.com",
+    "password": "$2b$12$KA5spB72kje6rmgAdqUQj.xii/jJ4MBPw4tVlaJK1sgn0stpgq1m6",
+    "role": "user"
   }
 ]

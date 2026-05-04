@@ -1,5 +1,10 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { getIncidents, createIncident, deleteIncident } from "../services/IncidentsService";
+import {
+  getIncidents,
+  createIncident,
+  deleteIncident,
+} from "../services/IncidentsService";
+
 import IncidentList from "../components/Incident/IncidentList";
 
 const Incidents = () => {
@@ -16,77 +21,109 @@ const Incidents = () => {
 
   const limit = 5;
 
-  // ✅ DELETE
-  const handleDelete = async (id) => {
-    try {
-      await deleteIncident(id);
-
-      // remove from UI instantly
-      setIncidents((prev) => prev.filter((i) => i.id !== id));
-
-      // optional: refetch to stay in sync
-      fetchData();
-
-    } catch (err) {
-      console.error(err);
-      alert("Failed to delete incident");
-    }
+  // =========================
+  // NORMALIZE RESPONSE (CRITICAL FIX)
+  // =========================
+  const normalizeIncidents = (res) => {
+    return (
+      res?.data?.incidents ||
+      res?.data ||
+      res?.incidents ||
+      []
+    );
   };
 
-  // ✅ CREATE (FIXED)
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    if (!form.title.trim()) {
-      alert("Title is required");
-      return;
-    }
-
-    try {
-      const newIncident = await createIncident(form);
-
-      // 🔥 THIS IS THE KEY FIX
-      setIncidents((prev) => [newIncident, ...prev].slice(0, limit));
-
-      setForm({ title: "", description: "", severity: "low" });
-
-      // keep pagination accurate
-      setTotal((prev) => prev + 1);
-
-    } catch (err) {
-      console.error(err);
-      alert("Failed to create incident");
-    }
+  const normalizeTotal = (res) => {
+    return (
+      res?.data?.total ||
+      res?.total ||
+      res?.count ||
+      0
+    );
   };
 
-  // ✅ FETCH
+  // =========================
+  // FETCH
+  // =========================
   const fetchData = useCallback(async () => {
     setLoading(true);
+
     try {
       const res = await getIncidents(page, limit);
 
-      setIncidents(res.data ?? res.incidents ?? []);
-      setTotal(res.total ?? res.count ?? 0);
+      const data = normalizeIncidents(res);
+      const count = normalizeTotal(res);
+
+      setIncidents(Array.isArray(data) ? data : []);
+      setTotal(count);
 
     } catch (err) {
-      console.error(err);
+      console.error("FETCH INCIDENTS ERROR:", err);
 
       if (err.response?.status === 401) {
-        alert("Session expired, please login again");
         localStorage.removeItem("token");
         window.location.href = "/login";
       } else {
-        alert("Failed to fetch incidents.");
+        alert("Failed to fetch incidents");
       }
 
     } finally {
       setLoading(false);
     }
-  }, [page, limit]);
+  }, [page]);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  // =========================
+  // CREATE
+  // =========================
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!form.title.trim()) return;
+
+    try {
+      const res = await createIncident(form);
+
+      const created =
+        res?.data ||
+        res;
+
+      setIncidents((prev) => [created, ...prev].slice(0, limit));
+      setTotal((prev) => prev + 1);
+
+      setForm({
+        title: "",
+        description: "",
+        severity: "low",
+      });
+
+    } catch (err) {
+      console.error("CREATE INCIDENT ERROR:", err);
+      alert("Failed to create incident");
+    }
+  };
+
+  // =========================
+  // DELETE
+  // =========================
+  const handleDelete = async (id) => {
+    try {
+      await deleteIncident(id);
+
+      setIncidents((prev) =>
+        prev.filter((i) => i.id !== id)
+      );
+
+      setTotal((prev) => Math.max(prev - 1, 0));
+
+    } catch (err) {
+      console.error("DELETE INCIDENT ERROR:", err);
+      alert("Failed to delete incident");
+    }
+  };
 
   const totalPages = Math.max(Math.ceil(total / limit), 1);
 
@@ -100,6 +137,7 @@ const Incidents = () => {
     <div>
       <h1>Incidents</h1>
 
+      {/* FORM */}
       <form onSubmit={handleSubmit}>
         <input
           placeholder="Title"
@@ -131,17 +169,20 @@ const Incidents = () => {
         <button type="submit">Create Incident</button>
       </form>
 
+      {/* STATES */}
       {loading && <p>Loading...</p>}
 
       {!loading && incidents.length === 0 && (
         <p>No incidents found.</p>
       )}
 
+      {/* LIST */}
       <IncidentList
         incidents={incidents}
         onDelete={handleDelete}
       />
 
+      {/* PAGINATION */}
       <div>
         <button
           onClick={() => setPage((p) => Math.max(p - 1, 1))}
@@ -151,7 +192,9 @@ const Incidents = () => {
         </button>
 
         <button
-          onClick={() => setPage((p) => Math.min(p + 1, totalPages))}
+          onClick={() =>
+            setPage((p) => Math.min(p + 1, totalPages))
+          }
           disabled={page === totalPages || loading}
         >
           Next
