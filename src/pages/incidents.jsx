@@ -1,209 +1,195 @@
 import React, { useEffect, useState, useCallback } from "react";
-import {
-  getIncidents,
-  createIncident,
-  deleteIncident,
-} from "../services/IncidentsService";
+import axios from "axios";
 
-import IncidentList from "../components/Incident/IncidentList";
+const API_URL = "http://localhost:5000/api/incidents";
 
 const Incidents = () => {
-  const [form, setForm] = useState({
-    title: "",
-    description: "",
-    severity: "low",
-  });
-
   const [incidents, setIncidents] = useState([]);
-  const [page, setPage] = useState(1);
-  const [total, setTotal] = useState(0);
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const limit = 5;
-
-  // =========================
-  // NORMALIZE RESPONSE (CRITICAL FIX)
-  // =========================
-  const normalizeIncidents = (res) => {
-    return (
-      res?.data?.incidents ||
-      res?.data ||
-      res?.incidents ||
-      []
-    );
-  };
-
-  const normalizeTotal = (res) => {
-    return (
-      res?.data?.total ||
-      res?.total ||
-      res?.count ||
-      0
-    );
-  };
+  const token = localStorage.getItem("token");
 
   // =========================
-  // FETCH
+  // FETCH INCIDENTS
   // =========================
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-
+  const fetchIncidents = useCallback(async () => {
     try {
-      const res = await getIncidents(page, limit);
-
-      const data = normalizeIncidents(res);
-      const count = normalizeTotal(res);
-
-      setIncidents(Array.isArray(data) ? data : []);
-      setTotal(count);
-
+      setLoading(true);
+      const res = await axios.get(API_URL, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setIncidents(res.data);
     } catch (err) {
-      console.error("FETCH INCIDENTS ERROR:", err);
-
-      if (err.response?.status === 401) {
-        localStorage.removeItem("token");
-        window.location.href = "/login";
-      } else {
-        alert("Failed to fetch incidents");
-      }
-
+      console.error(err);
+      setError("Failed to load incidents");
     } finally {
       setLoading(false);
     }
-  }, [page]);
+  }, [token]);
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    if (!token) return;
+    fetchIncidents();
+  }, [fetchIncidents, token]);
 
   // =========================
-  // CREATE
+  // FILE VALIDATION (SECURITY)
+  // =========================
+  const handleFileChange = (e) => {
+    const selected = e.target.files[0];
+
+    if (!selected) return;
+
+    // 🔐 Restrict file size (5MB)
+    if (selected.size > 5 * 1024 * 1024) {
+      alert("File too large (max 5MB)");
+      return;
+    }
+
+    // 🔐 Restrict file types
+    const allowedTypes = [
+      "image/png",
+      "image/jpeg",
+      "application/pdf",
+    ];
+
+    if (!allowedTypes.includes(selected.type)) {
+      alert("Invalid file type");
+      return;
+    }
+
+    setFile(selected);
+  };
+
+  // =========================
+  // DELETE INCIDENT
+  // =========================
+  const handleDelete = async (id) => {
+    const confirmDelete = window.confirm(
+      "Are you sure you want to delete this incident?"
+    );
+    if (!confirmDelete) return;
+
+    try {
+      await axios.delete(`${API_URL}/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      setIncidents((prev) => prev.filter((i) => i.id !== id)); // 🔥 instant UI update
+    } catch (err) {
+      console.error(err);
+      alert("Delete failed");
+    }
+  };
+
+  // =========================
+  // CREATE INCIDENT
   // =========================
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!form.title.trim()) return;
+    if (!title.trim() || !description.trim()) {
+      alert("Title and description are required");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("title", title.trim());
+    formData.append("description", description.trim());
+    if (file) formData.append("attachment", file);
 
     try {
-      const res = await createIncident(form);
-
-      const created =
-        res?.data ||
-        res;
-
-      setIncidents((prev) => [created, ...prev].slice(0, limit));
-      setTotal((prev) => prev + 1);
-
-      setForm({
-        title: "",
-        description: "",
-        severity: "low",
+      await axios.post(API_URL, formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data",
+        },
       });
 
+      // Reset
+      setTitle("");
+      setDescription("");
+      setFile(null);
+
+      fetchIncidents();
     } catch (err) {
-      console.error("CREATE INCIDENT ERROR:", err);
-      alert("Failed to create incident");
+      console.error(err);
+      alert("Create failed");
     }
   };
 
   // =========================
-  // DELETE
+  // UI
   // =========================
-  const handleDelete = async (id) => {
-    try {
-      await deleteIncident(id);
-
-      setIncidents((prev) =>
-        prev.filter((i) => i.id !== id)
-      );
-
-      setTotal((prev) => Math.max(prev - 1, 0));
-
-    } catch (err) {
-      console.error("DELETE INCIDENT ERROR:", err);
-      alert("Failed to delete incident");
-    }
-  };
-
-  const totalPages = Math.max(Math.ceil(total / limit), 1);
-
-  useEffect(() => {
-    if (page > totalPages) {
-      setPage(totalPages);
-    }
-  }, [totalPages, page]);
-
   return (
-    <div>
-      <h1>Incidents</h1>
+    <div style={{ padding: "20px", maxWidth: "600px" }}>
+      <h2>Incidents</h2>
 
-      {/* FORM */}
+      {error && <p style={{ color: "red" }}>{error}</p>}
+      {loading && <p>Loading...</p>}
+
+      {/* =========================
+          CREATE FORM
+      ========================= */}
       <form onSubmit={handleSubmit}>
         <input
+          type="text"
           placeholder="Title"
-          value={form.title}
-          onChange={(e) =>
-            setForm({ ...form, title: e.target.value })
-          }
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          maxLength={255} // 🔐 prevent abuse
+          required
         />
+        <br /><br />
 
-        <input
+        <textarea
           placeholder="Description"
-          value={form.description}
-          onChange={(e) =>
-            setForm({ ...form, description: e.target.value })
-          }
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          maxLength={2000} // 🔐 prevent abuse
+          required
         />
+        <br /><br />
 
-        <select
-          value={form.severity}
-          onChange={(e) =>
-            setForm({ ...form, severity: e.target.value })
-          }
-        >
-          <option value="low">Low</option>
-          <option value="medium">Medium</option>
-          <option value="high">High</option>
-        </select>
+        <input type="file" onChange={handleFileChange} />
+        <br /><br />
 
         <button type="submit">Create Incident</button>
       </form>
 
-      {/* STATES */}
-      {loading && <p>Loading...</p>}
+      <hr />
 
-      {!loading && incidents.length === 0 && (
-        <p>No incidents found.</p>
-      )}
+      {/* =========================
+          INCIDENT LIST
+      ========================= */}
+      <ul>
+        {incidents.map((incident) => (
+          <li key={incident.id} style={{ marginBottom: "15px" }}>
+            <strong>{incident.title}</strong>
+            <p>{incident.description}</p>
 
-      {/* LIST */}
-      <IncidentList
-        incidents={incidents}
-        onDelete={handleDelete}
-      />
+            {incident.attachment && (
+              <a
+                href={`http://localhost:5000/uploads/${incident.attachment}`}
+                target="_blank"
+                rel="noopener noreferrer" // 🔐 security fix
+              >
+                View Attachment
+              </a>
+            )}
 
-      {/* PAGINATION */}
-      <div>
-        <button
-          onClick={() => setPage((p) => Math.max(p - 1, 1))}
-          disabled={page === 1 || loading}
-        >
-          Prev
-        </button>
+            <br />
 
-        <button
-          onClick={() =>
-            setPage((p) => Math.min(p + 1, totalPages))
-          }
-          disabled={page === totalPages || loading}
-        >
-          Next
-        </button>
-      </div>
-
-      <p>
-        Page {page} of {totalPages}
-      </p>
+            <button onClick={() => handleDelete(incident.id)}>
+              Delete
+            </button>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 };

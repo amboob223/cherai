@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
+const path = require("path");
 
 dotenv.config();
 
@@ -17,7 +18,13 @@ app.use(
   })
 );
 
+// ⚠️ keep JSON for normal requests
 app.use(express.json());
+
+// =========================
+// STATIC FILES (UPLOADS)
+// =========================
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // =========================
 // ROUTES
