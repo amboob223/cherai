@@ -8,9 +8,10 @@ const Login = () => {
   const [password, setPassword] = useState("");
 
   const navigate = useNavigate();
-  const { login } = useContext(AuthContext); // ✅ use login instead of setUser
 
-  const handleLogin = async (e) => {
+  const { login } = useContext(AuthContext);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     try {
@@ -19,38 +20,69 @@ const Login = () => {
         password,
       });
 
-      // expects: { token, user }
-      login(res.data.user, res.data.token);
+      console.log("LOGIN RESPONSE:", res.data);
+
+      // ✅ EXPECTING:
+      // {
+      //   token: "...",
+      //   user: {...}
+      // }
+
+      const token = res.data.token;
+      const user = res.data.user;
+
+      if (!token) {
+        alert("No token returned from server");
+        return;
+      }
+
+      // ✅ Save to context + localStorage
+      login(user, token);
 
       navigate("/dashboard");
     } catch (err) {
-      console.error(err.response?.data || err.message);
-      alert(err.response?.data?.message || "Login failed");
+      console.error(err);
+
+      alert(
+        err.response?.data?.message || "Login failed"
+      );
     }
   };
 
   return (
-    <div>
-      <h2>Login</h2>
+    <div style={{ padding: "40px" }}>
+      <h1>Login</h1>
 
-      <form onSubmit={handleLogin}>
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-        />
+      <form onSubmit={handleSubmit}>
+        <div>
+          <input
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={(e) =>
+              setEmail(e.target.value)
+            }
+          />
+        </div>
 
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
+        <br />
 
-        <button type="submit">Login</button>
+        <div>
+          <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) =>
+              setPassword(e.target.value)
+            }
+          />
+        </div>
+
+        <br />
+
+        <button type="submit">
+          Login
+        </button>
       </form>
     </div>
   );

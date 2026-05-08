@@ -1,30 +1,55 @@
 const jwt = require("jsonwebtoken");
 
-const SECRET = process.env.JWT_SECRET || "devsecret";
-
 const protect = (req, res, next) => {
-  const authHeader = req.headers.authorization;
-
-  if (!authHeader?.startsWith("Bearer ")) {
-    return res.status(401).json({ message: "Not authorized" });
-  }
-
   try {
+    const authHeader = req.headers.authorization;
+
+    console.log("AUTH HEADER:", authHeader);
+
+    // ✅ Check header exists
+    if (!authHeader) {
+      return res.status(401).json({
+        message: "No authorization header",
+      });
+    }
+
+    // ✅ Must start with Bearer
+    if (!authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({
+        message: "Invalid authorization format",
+      });
+    }
+
+    // ✅ Extract token
     const token = authHeader.split(" ")[1];
-    const decoded = jwt.verify(token, SECRET);
+
+    console.log("TOKEN:", token);
+
+    if (!token) {
+      return res.status(401).json({
+        message: "No token provided",
+      });
+    }
+
+    // ✅ Verify token
+    const decoded = jwt.verify(
+      token,
+      process.env.JWT_SECRET
+    );
 
     req.user = decoded;
+
     next();
   } catch (err) {
-    return res.status(401).json({ message: "Invalid token" });
+    console.error(
+      "JWT VERIFY ERROR:",
+      err.message
+    );
+
+    return res.status(401).json({
+      message: "Invalid token",
+    });
   }
 };
 
-const authorize = (...roles) => (req, res, next) => {
-  if (!req.user || !roles.includes(req.user.role)) {
-    return res.status(403).json({ message: "Forbidden" });
-  }
-  next();
-};
-
-module.exports = { protect, authorize };
+module.exports = protect;

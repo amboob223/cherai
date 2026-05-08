@@ -4,38 +4,29 @@ export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
 
-  // hydrate auth state on refresh
+  // ✅ Load user on refresh
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    const storedUser = localStorage.getItem("user");
+    const savedUser = localStorage.getItem("user");
 
-    if (token && storedUser) {
-      try {
-        setUser(JSON.parse(storedUser));
-      } catch (err) {
-        console.error("Failed to parse stored user:", err);
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
-        setUser(null);
-      }
+    if (savedUser) {
+      setUser(JSON.parse(savedUser));
     }
-
-    setLoading(false);
   }, []);
 
-  // LOGIN (single source of truth)
+  // ✅ LOGIN
   const login = (userData, token) => {
     localStorage.setItem("token", token);
     localStorage.setItem("user", JSON.stringify(userData));
+
     setUser(userData);
   };
 
-  // LOGOUT
+  // ✅ LOGOUT
   const logout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
+
     setUser(null);
   };
 
@@ -43,10 +34,8 @@ export const AuthProvider = ({ children }) => {
     <AuthContext.Provider
       value={{
         user,
-        setUser, // optional (kept for flexibility/debugging)
         login,
         logout,
-        loading,
       }}
     >
       {children}

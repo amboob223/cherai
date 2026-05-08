@@ -1,35 +1,44 @@
-// src/components/Sidebar.jsx
-import React from "react";
-import { Link } from "react-router-dom";
+import { NavLink } from "react-router-dom";
+import { useContext } from "react";
+import { AuthContext } from "../context/AuthContext";
 
-const Sidebar = () => {
+export default function Sidebar() {
+  const { user } = useContext(AuthContext);
+
   return (
-    <div style={styles.sidebar}>
-      <h2>Admin Panel</h2>
-      <nav>
-        <ul style={styles.ul}>
-          <li><Link to="/">Dashboard</Link></li>
-          <li><Link to="/policies">Policies</Link></li>
-          <li><Link to="/tasks">Tasks</Link></li>
-        </ul>
+    <div className="sidebar">
+      <div className="sidebar-header">
+        <div className="logo">🍒🔍 Cherai</div>
+        <small className="tagline">I see you</small>
+      </div>
+
+      <nav className="nav flex-column mt-4">
+        <NavLink to="/dashboard" className="nav-link">
+          Dashboard
+        </NavLink>
+
+        <NavLink to="/incidents" className="nav-link">
+          Incidents
+        </NavLink>
+
+        <NavLink to="/tasks" className="nav-link">
+          Tasks
+        </NavLink>
+
+        <NavLink to="/policies" className="nav-link">
+          Policies
+        </NavLink>
+
+        {user?.role === "admin" && (
+          <NavLink to="/admin" className="nav-link text-warning">
+            Admin Panel
+          </NavLink>
+        )}
       </nav>
+
+      <div className="sidebar-footer">
+        <small>Secure Monitoring System</small>
+      </div>
     </div>
   );
-};
-
-const styles = {
-  sidebar: {
-    width: "200px",
-    height: "100vh",
-    background: "#1e1e2f",
-    color: "#fff",
-    padding: "20px",
-    position: "fixed",
-  },
-  ul: {
-    listStyleType: "none",
-    padding: 0,
-  },
-};
-
-export default Sidebar;
+}
