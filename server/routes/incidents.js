@@ -1,9 +1,8 @@
 const express = require("express");
 const router = express.Router();
 const pool = require("../db");
-const { protect } = require("../middleware/authMiddleware");
+const protect = require("../middleware/authMiddleware");
 const multer = require("multer");
-
 // =========================
 // MULTER SETUP
 // =========================
