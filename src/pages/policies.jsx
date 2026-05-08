@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import api from "../api/api";
 
 const Policies = () => {
@@ -34,6 +34,11 @@ const Policies = () => {
     }
   };
 
+  // load on mount
+  useEffect(() => {
+    fetchPolicies();
+  }, []);
+
   // =========================
   // CREATE POLICY
   // =========================
@@ -55,13 +60,28 @@ const Policies = () => {
       setTitle("");
       setDescription("");
 
-      // refresh list after create
       fetchPolicies(search);
     } catch (err) {
       console.error("Create policy error:", err);
       setError("Failed to create policy.");
     } finally {
       setCreating(false);
+    }
+  };
+
+  // =========================
+  // DELETE POLICY
+  // =========================
+  const deletePolicy = async (id) => {
+    try {
+      await api.delete(`/policies/${id}`);
+
+      setPolicies((prev) =>
+        prev.filter((p) => p.id !== id)
+      );
+    } catch (err) {
+      console.error("Delete policy error:", err);
+      setError("Failed to delete policy");
     }
   };
 
@@ -92,7 +112,7 @@ const Policies = () => {
       </p>
 
       {/* =========================
-          CREATE POLICY FORM
+          CREATE POLICY
       ========================= */}
       <div className="card p-3 mb-4 shadow-sm">
         <h5>Create Policy</h5>
@@ -122,7 +142,7 @@ const Policies = () => {
       </div>
 
       {/* =========================
-          SEARCH BAR
+          SEARCH
       ========================= */}
       <div className="d-flex gap-2 mb-3" style={{ maxWidth: "500px" }}>
 
@@ -165,17 +185,28 @@ const Policies = () => {
       )}
 
       {/* =========================
-          POLICY LIST
+          POLICY LIST (FIXED - SINGLE MAP ONLY)
       ========================= */}
       <div className="row g-3">
         {policies.map((policy) => (
           <div key={policy.id} className="col-md-6">
             <div className="card shadow-sm border-0">
               <div className="card-body">
+
                 <h5>{policy.title}</h5>
+
                 <p className="text-muted">
                   {policy.description}
                 </p>
+
+                {/* DELETE BUTTON */}
+                <button
+                  onClick={() => deletePolicy(policy.id)}
+                  className="btn btn-danger btn-sm"
+                >
+                  Delete
+                </button>
+
               </div>
             </div>
           </div>

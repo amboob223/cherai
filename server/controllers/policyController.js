@@ -113,16 +113,11 @@ const deletePolicy = async (req, res) => {
       [req.params.id, req.user.id]
     );
 
-    if (!result.rows[0]) {
-      return res.status(404).json({ message: "Policy not found or unauthorized" });
+    if (!result.rows.length) {
+      return res.status(404).json({
+        message: "Policy not found or unauthorized",
+      });
     }
-
-    await logAction(
-      req.user.id,
-      "DELETE_POLICY",
-      "policy",
-      req.params.id
-    );
 
     res.json({ message: "Deleted successfully" });
   } catch (err) {
