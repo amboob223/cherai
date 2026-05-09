@@ -8,7 +8,7 @@ import {
 import { useContext } from "react";
 import { AuthContext } from "./context/AuthContext";
 
-import Sidebar from "./components/sidebar";
+import Navbar from "./components/Navbar";
 import ProtectedRoute from "./components/protectedRoute";
 
 import Login from "./pages/login";
@@ -35,9 +35,9 @@ function App() {
 
   return (
     <Router>
-      <div className="app-layout">
+      <div className="main-content">
         {/* Sidebar only when authenticated */}
-        {user && <Sidebar />}
+        {user && <Navbar />}
 
         <div className="main-content">
           <Routes>

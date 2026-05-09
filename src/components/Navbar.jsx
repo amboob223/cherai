@@ -1,30 +1,47 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useContext } from "react";
+import { AuthContext } from "../context/AuthContext";
 
 const Navbar = () => {
+  const { logout } = useContext(AuthContext);
+
+  const navigate = useNavigate();
+
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    window.location.href = "/login";
+    logout();
+    navigate("/login");
   };
 
   return (
-    <nav style={{ padding: "10px", background: "#eee" }}>
-      <Link to="/dashboard" style={{ marginRight: "10px" }}>
+    <nav className="navbar">
+
+      <Link to="/dashboard" className="logo">
+        🍒 CherAI
+      </Link>
+
+      <Link to="/dashboard" className="nav-link">
         Dashboard
       </Link>
 
-      <Link to="/incidents" style={{ marginRight: "10px" }}>
+      <Link to="/incidents" className="nav-link">
         Incidents
       </Link>
 
-      <Link to="/tasks">
+      <Link to="/tasks" className="nav-link">
         Tasks
       </Link>
 
-      <button onClick={handleLogout}>
-  Logout
-</button>
-    </nav>
+      <Link to="/policies" className="nav-link">
+        Policies
+      </Link>
 
+      <button
+        onClick={handleLogout}
+        className="logout-btn"
+      >
+        Logout
+      </button>
+    </nav>
   );
 };
 

@@ -27,14 +27,13 @@ const Policies = () => {
 
       setPolicies(res.data || []);
     } catch (err) {
-      console.error("Fetch policies error:", err);
+      console.error(err);
       setError("Failed to load policies.");
     } finally {
       setLoading(false);
     }
   };
 
-  // load on mount
   useEffect(() => {
     fetchPolicies();
   }, []);
@@ -43,7 +42,7 @@ const Policies = () => {
   // CREATE POLICY
   // =========================
   const createPolicy = async () => {
-    if (!title || !description) {
+    if (!title.trim() || !description.trim()) {
       setError("Title and description are required.");
       return;
     }
@@ -62,7 +61,7 @@ const Policies = () => {
 
       fetchPolicies(search);
     } catch (err) {
-      console.error("Create policy error:", err);
+      console.error(err);
       setError("Failed to create policy.");
     } finally {
       setCreating(false);
@@ -77,10 +76,10 @@ const Policies = () => {
       await api.delete(`/policies/${id}`);
 
       setPolicies((prev) =>
-        prev.filter((p) => p.id !== id)
+        prev.filter((p) => (p.id || p._id) !== id)
       );
     } catch (err) {
-      console.error("Delete policy error:", err);
+      console.error(err);
       setError("Failed to delete policy");
     }
   };
@@ -94,123 +93,131 @@ const Policies = () => {
   };
 
   const handleKeyDown = (e) => {
-    if (e.key === "Enter") {
-      handleSearch();
-    }
+    if (e.key === "Enter") handleSearch();
   };
 
+  // =========================
+  // UI
+  // =========================
   return (
-    <div className="container py-4">
+    <div className="page-center">
 
-      {/* HEADER */}
-      <h2 style={{ color: "#d1002c" }}>
-        Security Policies
-      </h2>
+      <div className="form-card">
 
-      <p className="text-muted">
-        Create, search, and review internal security policies.
-      </p>
+        {/* HEADER */}
+        <h1 className="form-title">Security Policies</h1>
 
-      {/* =========================
-          CREATE POLICY
-      ========================= */}
-      <div className="card p-3 mb-4 shadow-sm">
-        <h5>Create Policy</h5>
+        <p style={{ color: "#aaa", marginBottom: "20px" }}>
+          Create, search, and manage internal security policies.
+        </p>
 
-        <input
-          type="text"
-          className="form-control mb-2"
-          placeholder="Policy title"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-        />
+        {/* ERROR */}
+        {error && (
+          <p style={{ color: "#ff8fab", marginBottom: "15px" }}>
+            {error}
+          </p>
+        )}
 
-        <textarea
-          className="form-control mb-2"
-          placeholder="Policy description"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-        />
+        {/* =========================
+            CREATE POLICY
+        ========================= */}
+        <div style={{ marginBottom: "25px" }}>
 
-        <button
-          className="btn btn-success"
-          onClick={createPolicy}
-          disabled={creating}
-        >
-          {creating ? "Creating..." : "Add Policy"}
-        </button>
-      </div>
+          <div style={{ display: "grid", gap: "12px" }}>
 
-      {/* =========================
-          SEARCH
-      ========================= */}
-      <div className="d-flex gap-2 mb-3" style={{ maxWidth: "500px" }}>
+            <input
+              className="form-input"
+              placeholder="Policy title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+            />
 
-        <input
-          type="text"
-          placeholder="Search policies..."
-          value={searchInput}
-          onChange={(e) => setSearchInput(e.target.value)}
-          onKeyDown={handleKeyDown}
-          className="form-control"
-        />
+            <textarea
+              className="form-textarea"
+              placeholder="Policy description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+            />
 
-        <button
-          className="btn"
-          style={{
-            backgroundColor: "#d1002c",
-            color: "white",
-            whiteSpace: "nowrap",
-          }}
-          onClick={handleSearch}
-        >
-          Search
-        </button>
+            <button
+              className="form-btn"
+              onClick={createPolicy}
+              disabled={creating}
+            >
+              {creating ? "Creating..." : "Add Policy"}
+            </button>
 
-      </div>
-
-      {/* =========================
-          STATES
-      ========================= */}
-      {loading && <p>Loading policies...</p>}
-
-      {error && (
-        <div className="alert alert-danger">
-          {error}
-        </div>
-      )}
-
-      {!loading && policies.length === 0 && search && (
-        <p className="text-muted">No policies found.</p>
-      )}
-
-      {/* =========================
-          POLICY LIST (FIXED - SINGLE MAP ONLY)
-      ========================= */}
-      <div className="row g-3">
-        {policies.map((policy) => (
-          <div key={policy.id} className="col-md-6">
-            <div className="card shadow-sm border-0">
-              <div className="card-body">
-
-                <h5>{policy.title}</h5>
-
-                <p className="text-muted">
-                  {policy.description}
-                </p>
-
-                {/* DELETE BUTTON */}
-                <button
-                  onClick={() => deletePolicy(policy.id)}
-                  className="btn btn-danger btn-sm"
-                >
-                  Delete
-                </button>
-
-              </div>
-            </div>
           </div>
-        ))}
+
+        </div>
+
+        {/* =========================
+            SEARCH
+        ========================= */}
+        <div style={{
+          display: "flex",
+          gap: "10px",
+          marginBottom: "25px"
+        }}>
+
+          <input
+            className="form-input"
+            placeholder="Search policies..."
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            style={{ flex: 1 }}
+          />
+
+          <button className="form-btn" onClick={handleSearch}>
+            Search
+          </button>
+
+        </div>
+
+        {/* =========================
+            STATES
+        ========================= */}
+        {loading && <p>Loading policies...</p>}
+
+        {!loading && policies.length === 0 && (
+          <p>No policies found.</p>
+        )}
+
+        {/* =========================
+            POLICY LIST
+        ========================= */}
+        <div>
+
+          {policies.map((policy) => (
+            <div
+              key={policy.id || policy._id}
+              className="page-card"
+              style={{ marginBottom: "15px" }}
+            >
+
+              <h3 style={{ marginBottom: "8px" }}>
+                {policy.title}
+              </h3>
+
+              <p style={{ color: "#ccc", marginBottom: "12px" }}>
+                {policy.description}
+              </p>
+
+              <button
+                className="logout-btn"
+                onClick={() =>
+                  deletePolicy(policy.id || policy._id)
+                }
+              >
+                Delete
+              </button>
+
+            </div>
+          ))}
+
+        </div>
+
       </div>
 
     </div>

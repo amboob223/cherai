@@ -8,7 +8,6 @@ const Login = () => {
   const [password, setPassword] = useState("");
 
   const navigate = useNavigate();
-
   const { login } = useContext(AuthContext);
 
   const handleSubmit = async (e) => {
@@ -20,14 +19,6 @@ const Login = () => {
         password,
       });
 
-      console.log("LOGIN RESPONSE:", res.data);
-
-      // ✅ EXPECTING:
-      // {
-      //   token: "...",
-      //   user: {...}
-      // }
-
       const token = res.data.token;
       const user = res.data.user;
 
@@ -36,54 +27,60 @@ const Login = () => {
         return;
       }
 
-      // ✅ Save to context + localStorage
       login(user, token);
-
       navigate("/dashboard");
+
     } catch (err) {
       console.error(err);
-
-      alert(
-        err.response?.data?.message || "Login failed"
-      );
+      alert(err.response?.data?.message || "Login failed");
     }
   };
 
   return (
-    <div style={{ padding: "40px" }}>
-      <h1>Login</h1>
+    <div className="page-center">
 
-      <form onSubmit={handleSubmit}>
-        <div>
-          <input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={(e) =>
-              setEmail(e.target.value)
-            }
-          />
-        </div>
+      <div className="form-card" style={{ maxWidth: "400px", width: "100%" }}>
 
-        <br />
+        <h1 className="form-title">
+          Welcome Back
+        </h1>
 
-        <div>
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) =>
-              setPassword(e.target.value)
-            }
-          />
-        </div>
+        <p style={{ color: "#aaa", marginBottom: "20px" }}>
+          Sign in to continue to Cherai Security
+        </p>
 
-        <br />
+        <form onSubmit={handleSubmit}>
 
-        <button type="submit">
-          Login
-        </button>
-      </form>
+          <div style={{ display: "grid", gap: "12px" }}>
+
+            <input
+              className="form-input"
+              type="email"
+              placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+
+            <input
+              className="form-input"
+              type="password"
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+
+            <button className="form-btn" type="submit">
+              Login
+            </button>
+
+          </div>
+
+        </form>
+
+      </div>
+
     </div>
   );
 };

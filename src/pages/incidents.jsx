@@ -1,17 +1,14 @@
 import React, { useEffect, useState, useCallback } from "react";
-import axios from "axios";
-
-const API_URL = "http://localhost:5000/api/incidents";
+import api from "../api/api";
 
 const Incidents = () => {
   const [incidents, setIncidents] = useState([]);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [file, setFile] = useState(null);
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-
-  const token = localStorage.getItem("token");
 
   // =========================
   // FETCH INCIDENTS
@@ -19,43 +16,37 @@ const Incidents = () => {
   const fetchIncidents = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await axios.get(API_URL, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setIncidents(res.data);
+
+      // FIX: avoid double "/api" if baseURL already includes it
+      const res = await api.get("/incidents");
+
+      setIncidents(res.data || []);
+      setError("");
     } catch (err) {
-      console.error(err);
+      console.error("Fetch incidents error:", err);
       setError("Failed to load incidents");
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, []);
 
   useEffect(() => {
-    if (!token) return;
     fetchIncidents();
-  }, [fetchIncidents, token]);
+  }, [fetchIncidents]);
 
   // =========================
-  // FILE VALIDATION (SECURITY)
+  // FILE VALIDATION
   // =========================
   const handleFileChange = (e) => {
-    const selected = e.target.files[0];
-
+    const selected = e.target.files?.[0];
     if (!selected) return;
 
-    // 🔐 Restrict file size (5MB)
     if (selected.size > 5 * 1024 * 1024) {
       alert("File too large (max 5MB)");
       return;
     }
 
-    // 🔐 Restrict file types
-    const allowedTypes = [
-      "image/png",
-      "image/jpeg",
-      "application/pdf",
-    ];
+    const allowedTypes = ["image/png", "image/jpeg", "application/pdf"];
 
     if (!allowedTypes.includes(selected.type)) {
       alert("Invalid file type");
@@ -66,59 +57,60 @@ const Incidents = () => {
   };
 
   // =========================
-  // DELETE INCIDENT
-  // =========================
-  const handleDelete = async (id) => {
-    const confirmDelete = window.confirm(
-      "Are you sure you want to delete this incident?"
-    );
-    if (!confirmDelete) return;
-
-    try {
-      await axios.delete(`${API_URL}/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      setIncidents((prev) => prev.filter((i) => i.id !== id)); // 🔥 instant UI update
-    } catch (err) {
-      console.error(err);
-      alert("Delete failed");
-    }
-  };
-
-  // =========================
   // CREATE INCIDENT
   // =========================
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!title.trim() || !description.trim()) {
-      alert("Title and description are required");
+      alert("Title and description required");
       return;
     }
 
-    const formData = new FormData();
-    formData.append("title", title.trim());
-    formData.append("description", description.trim());
-    if (file) formData.append("attachment", file);
-
     try {
-      await axios.post(API_URL, formData, {
+      const formData = new FormData();
+      formData.append("title", title.trim());
+      formData.append("description", description.trim());
+
+      if (file) {
+        formData.append("attachment", file);
+      }
+
+      await api.post("/incidents", formData, {
         headers: {
-          Authorization: `Bearer ${token}`,
           "Content-Type": "multipart/form-data",
         },
       });
 
-      // Reset
       setTitle("");
       setDescription("");
       setFile(null);
 
       fetchIncidents();
     } catch (err) {
-      console.error(err);
-      alert("Create failed");
+      console.error("Create incident error:", err);
+      alert("Failed to create incident");
+    }
+  };
+
+  // =========================
+  // DELETE INCIDENT
+  // =========================
+  const handleDelete = async (id) => {
+    if (!window.confirm("Delete this incident?")) return;
+
+    try {
+      await api.delete(`/incidents/${id}`);
+
+      setIncidents((prev) =>
+        prev.filter(
+          (incident) =>
+            (incident.id || incident._id) !== id
+        )
+      );
+    } catch (err) {
+      console.error("Delete incident error:", err);
+      alert("Delete failed");
     }
   };
 
@@ -126,70 +118,91 @@ const Incidents = () => {
   // UI
   // =========================
   return (
-    <div style={{ padding: "20px", maxWidth: "600px" }}>
-      <h2>Incidents</h2>
+    <div className="page-center">
+      <div className="form-card">
+        <h1 className="form-title">Incident Reports</h1>
 
-      {error && <p style={{ color: "red" }}>{error}</p>}
-      {loading && <p>Loading...</p>}
+        {error && <p style={{ color: "#ff8fab" }}>{error}</p>}
+        {loading && <p style={{ color: "white" }}>Loading...</p>}
 
-      {/* =========================
-          CREATE FORM
-      ========================= */}
-      <form onSubmit={handleSubmit}>
-        <input
-          type="text"
-          placeholder="Title"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          maxLength={255} // 🔐 prevent abuse
-          required
-        />
-        <br /><br />
+        {/* FORM */}
+        <form onSubmit={handleSubmit}>
+          <div className="form-group">
+            <label>Incident Title</label>
+            <input
+              type="text"
+              className="form-input"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              maxLength={255}
+              required
+            />
+          </div>
 
-        <textarea
-          placeholder="Description"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          maxLength={2000} // 🔐 prevent abuse
-          required
-        />
-        <br /><br />
+          <div className="form-group">
+            <label>Description</label>
+            <textarea
+              className="form-textarea"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              maxLength={2000}
+              required
+            />
+          </div>
 
-        <input type="file" onChange={handleFileChange} />
-        <br /><br />
+          <div className="form-group">
+            <label>Attachment</label>
+            <input
+              type="file"
+              onChange={handleFileChange}
+              className="form-input"
+            />
+          </div>
 
-        <button type="submit">Create Incident</button>
-      </form>
+          <button type="submit" className="form-btn">
+            Create Incident
+          </button>
+        </form>
 
-      <hr />
+        <hr style={{ margin: "30px 0", borderColor: "rgba(255,255,255,0.1)" }} />
 
-      {/* =========================
-          INCIDENT LIST
-      ========================= */}
-      <ul>
-        {incidents.map((incident) => (
-          <li key={incident.id} style={{ marginBottom: "15px" }}>
-            <strong>{incident.title}</strong>
-            <p>{incident.description}</p>
+        {/* LIST */}
+        <div>
+          {incidents.length === 0 ? (
+            <p>No incidents found.</p>
+          ) : (
+            incidents.map((incident) => (
+              <div key={incident.id || incident._id} className="page-card">
+                <h3>{incident.title}</h3>
+                <p>{incident.description}</p>
 
-            {incident.attachment && (
-              <a
-                href={`http://localhost:5000/uploads/${incident.attachment}`}
-                target="_blank"
-                rel="noopener noreferrer" // 🔐 security fix
-              >
-                View Attachment
-              </a>
-            )}
+                {incident.attachment && (
+                  <a
+                    href={`http://localhost:5000/uploads/${incident.attachment}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ color: "#ff8fab" }}
+                  >
+                    View Attachment
+                  </a>
+                )}
 
-            <br />
+                <br />
+                <br />
 
-            <button onClick={() => handleDelete(incident.id)}>
-              Delete
-            </button>
-          </li>
-        ))}
-      </ul>
+                <button
+                  onClick={() =>
+                    handleDelete(incident.id || incident._id)
+                  }
+                  className="logout-btn"
+                >
+                  Delete
+                </button>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
     </div>
   );
 };
