@@ -57,7 +57,7 @@ const Login = () => {
           <img
             src={logo}
             alt="CherAI Logo"
-            style={{ width: "45px", height: "45px", objectFit: "contain" }}
+            style={{ width: "172px", height: "172px", objectFit: "contain" }}
           />
         </div>
 

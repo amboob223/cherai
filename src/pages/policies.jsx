@@ -117,7 +117,7 @@ const Policies = () => {
           <img
             src={logo}
             alt="Logo"
-            style={{ width: "40px", height: "40px", objectFit: "contain" }}
+            style={{ width: "175px", height: "175px", objectFit: "contain" }}
           />
 
           <h1 className="form-title" style={{ margin: 0 }}>

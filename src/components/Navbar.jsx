@@ -28,8 +28,8 @@ const Navbar = () => {
             src={logo}
             alt="CherAI Logo"
             style={{
-              width: "30px",
-              height: "30px",
+              width: "172px",
+              height: "172px",
               objectFit: "contain"
             }}
           />

@@ -58,7 +58,7 @@ export default function Register() {
           <img
             src={logo}
             alt="CherAI Logo"
-            style={{ width: "45px", height: "45px", objectFit: "contain" }}
+            style={{ width: "175px", height: "175px", objectFit: "contain" }}
           />
         </div>
 
