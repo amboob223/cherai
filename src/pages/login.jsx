@@ -1,7 +1,10 @@
 import React, { useState, useContext } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import api from "../api/api";
 import { AuthContext } from "../context/AuthContext";
+
+// 👉 logo import
+import logo from "../assests/logo.png";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -39,16 +42,36 @@ const Login = () => {
   return (
     <div className="page-center">
 
-      <div className="form-card" style={{ maxWidth: "400px", width: "100%" }}>
+      <div className="form-card" style={{ maxWidth: "420px", width: "100%" }}>
 
-        <h1 className="form-title">
+        {/* =========================
+            LOGO HEADER
+        ========================= */}
+        <div style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: "10px",
+          marginBottom: "10px"
+        }}>
+          <img
+            src={logo}
+            alt="CherAI Logo"
+            style={{ width: "45px", height: "45px", objectFit: "contain" }}
+          />
+        </div>
+
+        <h1 className="form-title" style={{ textAlign: "center" }}>
           Welcome Back
         </h1>
 
-        <p style={{ color: "#aaa", marginBottom: "20px" }}>
-          Sign in to continue to Cherai Security
+        <p style={{ color: "#aaa", marginBottom: "20px", textAlign: "center" }}>
+          Sign in to access CherAI Security Platform
         </p>
 
+        {/* =========================
+            FORM
+        ========================= */}
         <form onSubmit={handleSubmit}>
 
           <div style={{ display: "grid", gap: "12px" }}>
@@ -78,6 +101,28 @@ const Login = () => {
           </div>
 
         </form>
+
+        {/* =========================
+            REGISTER LINK
+        ========================= */}
+        <p style={{
+          marginTop: "15px",
+          color: "#aaa",
+          fontSize: "14px",
+          textAlign: "center"
+        }}>
+          Don’t have an account?{" "}
+          <Link
+            to="/register"
+            style={{
+              color: "#ff4d6d",
+              textDecoration: "none",
+              fontWeight: "bold"
+            }}
+          >
+            Create one
+          </Link>
+        </p>
 
       </div>
 

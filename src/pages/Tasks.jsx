@@ -1,6 +1,9 @@
 import React, { useEffect, useState, useCallback } from "react";
 import api from "../api/api";
 
+// 👉 logo import
+import logo from "../assests/logo.png";
+
 export default function Tasks() {
   const [tasks, setTasks] = useState([]);
   const [users, setUsers] = useState([]);
@@ -111,41 +114,41 @@ export default function Tasks() {
   };
 
   // =========================
-  // STATUS BADGE
-  // =========================
-  const statusBadge = (status) => {
-    const base = {
-      padding: "5px 10px",
-      borderRadius: "20px",
-      fontSize: "12px",
-      color: "white",
-      display: "inline-block",
-    };
-
-    switch (status) {
-      case "done":
-        return { ...base, backgroundColor: "#2ecc71" };
-      case "in_progress":
-        return { ...base, backgroundColor: "#f39c12" };
-      default:
-        return { ...base, backgroundColor: "#7f8c8d" };
-    }
-  };
-
-  // =========================
   // UI
   // =========================
   return (
     <div className="page-center">
+
       <div className="form-card">
 
-        <h1 className="form-title">Tasks</h1>
+        {/* 🍒 HEADER WITH LOGO */}
+        <div style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "10px",
+          marginBottom: "10px"
+        }}>
+          <img
+            src={logo}
+            alt="Logo"
+            style={{ width: "40px", height: "40px", objectFit: "contain" }}
+          />
+
+          <h1 className="form-title" style={{ margin: 0 }}>
+            Tasks
+          </h1>
+        </div>
+
+        <p style={{ color: "#aaa", marginBottom: "20px" }}>
+          Manage assignments and track work progress
+        </p>
 
         {error && <p style={{ color: "#ff8fab" }}>{error}</p>}
         {loading && <p>Loading...</p>}
 
         {/* CREATE TASK */}
         <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", marginBottom: "20px" }}>
+
           <input
             className="form-input"
             placeholder="Task title"
@@ -182,10 +185,12 @@ export default function Tasks() {
           <button className="form-btn" onClick={createTask}>
             Add Task
           </button>
+
         </div>
 
         {/* FILTERS */}
         <div style={{ display: "flex", gap: "10px", marginBottom: "20px" }}>
+
           <select
             className="form-input"
             value={filterUser}
@@ -205,9 +210,10 @@ export default function Tasks() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
+
         </div>
 
-        {/* TASK CARDS */}
+        {/* TASK LIST */}
         {tasks.length === 0 ? (
           <p>No tasks found</p>
         ) : (
@@ -215,15 +221,9 @@ export default function Tasks() {
             <div key={task.id || task._id} className="page-card" style={{ marginBottom: "15px" }}>
 
               <h3>{task.title}</h3>
-              <p>{task.description}</p>
+              <p style={{ color: "#ccc" }}>{task.description}</p>
 
-              <div style={{ marginBottom: "10px" }}>
-                <span style={statusBadge(task.status)}>
-                  {task.status || "pending"}
-                </span>
-              </div>
-
-              <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+              <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", marginTop: "10px" }}>
 
                 <select
                   className="form-input"

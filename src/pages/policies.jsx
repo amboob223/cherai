@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from "react";
 import api from "../api/api";
 
+// 👉 logo import
+import logo from "../assests/logo.png";
+
 const Policies = () => {
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
@@ -104,11 +107,26 @@ const Policies = () => {
 
       <div className="form-card">
 
-        {/* HEADER */}
-        <h1 className="form-title">Security Policies</h1>
+        {/* 🍒 HEADER WITH LOGO */}
+        <div style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "10px",
+          marginBottom: "10px"
+        }}>
+          <img
+            src={logo}
+            alt="Logo"
+            style={{ width: "40px", height: "40px", objectFit: "contain" }}
+          />
+
+          <h1 className="form-title" style={{ margin: 0 }}>
+            Policies
+          </h1>
+        </div>
 
         <p style={{ color: "#aaa", marginBottom: "20px" }}>
-          Create, search, and manage internal security policies.
+          Define and manage internal security rules
         </p>
 
         {/* ERROR */}
@@ -185,7 +203,7 @@ const Policies = () => {
         )}
 
         {/* =========================
-            POLICY LIST
+            LIST
         ========================= */}
         <div>
 
@@ -196,11 +214,9 @@ const Policies = () => {
               style={{ marginBottom: "15px" }}
             >
 
-              <h3 style={{ marginBottom: "8px" }}>
-                {policy.title}
-              </h3>
+              <h3>{policy.title}</h3>
 
-              <p style={{ color: "#ccc", marginBottom: "12px" }}>
+              <p style={{ color: "#ccc" }}>
                 {policy.description}
               </p>
 

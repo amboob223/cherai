@@ -1,6 +1,9 @@
 import React, { useEffect, useState, useCallback } from "react";
 import api from "../api/api";
 
+// 👉 import your logo
+import logo from "../assests/logo.png";
+
 const Incidents = () => {
   const [incidents, setIncidents] = useState([]);
   const [title, setTitle] = useState("");
@@ -17,7 +20,6 @@ const Incidents = () => {
     try {
       setLoading(true);
 
-      // FIX: avoid double "/api" if baseURL already includes it
       const res = await api.get("/incidents");
 
       setIncidents(res.data || []);
@@ -77,9 +79,7 @@ const Incidents = () => {
       }
 
       await api.post("/incidents", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
+        headers: { "Content-Type": "multipart/form-data" },
       });
 
       setTitle("");
@@ -103,10 +103,7 @@ const Incidents = () => {
       await api.delete(`/incidents/${id}`);
 
       setIncidents((prev) =>
-        prev.filter(
-          (incident) =>
-            (incident.id || incident._id) !== id
-        )
+        prev.filter((i) => (i.id || i._id) !== id)
       );
     } catch (err) {
       console.error("Delete incident error:", err);
@@ -119,14 +116,39 @@ const Incidents = () => {
   // =========================
   return (
     <div className="page-center">
+
       <div className="form-card">
-        <h1 className="form-title">Incident Reports</h1>
+
+        {/* 🍒 HEADER WITH LOGO */}
+        <div style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "10px",
+          marginBottom: "10px"
+        }}>
+          <img
+            src={logo}
+            alt="Logo"
+            style={{ width: "40px", height: "40px", objectFit: "contain" }}
+          />
+
+          <h1 className="form-title" style={{ margin: 0 }}>
+            Incident Reports
+          </h1>
+        </div>
+
+        <p style={{ color: "#aaa", marginBottom: "20px" }}>
+          Report and track security incidents across your system
+        </p>
 
         {error && <p style={{ color: "#ff8fab" }}>{error}</p>}
         {loading && <p style={{ color: "white" }}>Loading...</p>}
 
-        {/* FORM */}
+        {/* =========================
+            FORM
+        ========================= */}
         <form onSubmit={handleSubmit}>
+
           <div className="form-group">
             <label>Incident Title</label>
             <input
@@ -162,17 +184,26 @@ const Incidents = () => {
           <button type="submit" className="form-btn">
             Create Incident
           </button>
+
         </form>
 
         <hr style={{ margin: "30px 0", borderColor: "rgba(255,255,255,0.1)" }} />
 
-        {/* LIST */}
+        {/* =========================
+            LIST
+        ========================= */}
         <div>
+
           {incidents.length === 0 ? (
             <p>No incidents found.</p>
           ) : (
             incidents.map((incident) => (
-              <div key={incident.id || incident._id} className="page-card">
+              <div
+                key={incident.id || incident._id}
+                className="page-card"
+                style={{ marginBottom: "15px" }}
+              >
+
                 <h3>{incident.title}</h3>
                 <p>{incident.description}</p>
 
@@ -187,8 +218,7 @@ const Incidents = () => {
                   </a>
                 )}
 
-                <br />
-                <br />
+                <br /><br />
 
                 <button
                   onClick={() =>
@@ -198,11 +228,15 @@ const Incidents = () => {
                 >
                   Delete
                 </button>
+
               </div>
             ))
           )}
+
         </div>
+
       </div>
+
     </div>
   );
 };
