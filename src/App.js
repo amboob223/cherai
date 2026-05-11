@@ -13,6 +13,7 @@ import ProtectedRoute from "./components/protectedRoute";
 
 import Login from "./pages/login";
 import Register from "./pages/register";
+
 import Dashboard from "./pages/Dashboard";
 import Policies from "./pages/policies";
 import Tasks from "./pages/Tasks";
@@ -22,7 +23,9 @@ import Incidents from "./pages/Incidents";
 function App() {
   const { user, loading } = useContext(AuthContext);
 
-  // Prevent UI flash before auth resolves
+  // =========================
+  // LOADING SCREEN
+  // =========================
   if (loading) {
     return (
       <div className="d-flex justify-content-center align-items-center vh-100">
@@ -35,29 +38,48 @@ function App() {
 
   return (
     <Router>
+
       <div className="main-content">
-        {/* Sidebar only when authenticated */}
+
+        {/* =========================
+            NAVBAR
+        ========================= */}
         {user && <Navbar />}
 
         <div className="main-content">
+
           <Routes>
 
-            {/* ================= PUBLIC ================= */}
+            {/* =========================
+                PUBLIC ROUTES
+            ========================= */}
+
             <Route
               path="/login"
               element={
-                user ? <Navigate to="/dashboard" replace /> : <Login />
+                user ? (
+                  <Navigate to="/dashboard" replace />
+                ) : (
+                  <Login />
+                )
               }
             />
 
             <Route
               path="/register"
               element={
-                user ? <Navigate to="/dashboard" replace /> : <Register />
+                user ? (
+                  <Navigate to="/dashboard" replace />
+                ) : (
+                  <Register />
+                )
               }
             />
 
-            {/* ================= PROTECTED ================= */}
+            {/* =========================
+                PROTECTED ROUTES
+            ========================= */}
+
             <Route
               path="/dashboard"
               element={
@@ -94,7 +116,10 @@ function App() {
               }
             />
 
-            {/* ================= ADMIN ================= */}
+            {/* =========================
+                ADMIN ROUTE
+            ========================= */}
+
             <Route
               path="/admin"
               element={
@@ -108,7 +133,10 @@ function App() {
               }
             />
 
-            {/* ================= DEFAULT ================= */}
+            {/* =========================
+                DEFAULT ROUTE
+            ========================= */}
+
             <Route
               path="/"
               element={
@@ -120,8 +148,11 @@ function App() {
             />
 
           </Routes>
+
         </div>
+
       </div>
+
     </Router>
   );
 }

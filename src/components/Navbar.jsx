@@ -22,7 +22,16 @@ const Navbar = () => {
       ========================= */}
       <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
 
-        <Link to="/dashboard" style={{ display: "flex", alignItems: "center", gap: "8px", textDecoration: "none" }}>
+        {/* Logo still goes to dashboard */}
+        <Link
+          to="/dashboard"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            textDecoration: "none"
+          }}
+        >
 
           <img
             src={logo}
@@ -34,7 +43,13 @@ const Navbar = () => {
             }}
           />
 
-          <span className="logo" style={{ color: "#ff4d6d", fontWeight: "bold" }}>
+          <span
+            className="logo"
+            style={{
+              color: "#ff4d6d",
+              fontWeight: "bold"
+            }}
+          >
             CherAI
           </span>
 
@@ -45,11 +60,15 @@ const Navbar = () => {
       {/* =========================
           NAV LINKS
       ========================= */}
-      <div style={{ display: "flex", gap: "15px", alignItems: "center" }}>
+      <div
+        style={{
+          display: "flex",
+          gap: "15px",
+          alignItems: "center"
+        }}
+      >
 
-        <Link to="/dashboard" className="nav-link">
-          Dashboard
-        </Link>
+        {/* Dashboard link removed */}
 
         <Link to="/incidents" className="nav-link">
           Incidents

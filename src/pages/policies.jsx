@@ -5,8 +5,6 @@ import api from "../api/api";
 import logo from "../assests/logo.png";
 
 const Policies = () => {
-  const [searchInput, setSearchInput] = useState("");
-  const [search, setSearch] = useState("");
   const [policies, setPolicies] = useState([]);
 
   const [title, setTitle] = useState("");
@@ -19,14 +17,12 @@ const Policies = () => {
   // =========================
   // FETCH POLICIES
   // =========================
-  const fetchPolicies = async (query = "") => {
+  const fetchPolicies = async () => {
     try {
       setLoading(true);
       setError("");
 
-      const res = await api.get("/policies", {
-        params: { search: query.trim() },
-      });
+      const res = await api.get("/policies");
 
       setPolicies(res.data || []);
     } catch (err) {
@@ -62,7 +58,7 @@ const Policies = () => {
       setTitle("");
       setDescription("");
 
-      fetchPolicies(search);
+      fetchPolicies();
     } catch (err) {
       console.error(err);
       setError("Failed to create policy.");
@@ -88,18 +84,6 @@ const Policies = () => {
   };
 
   // =========================
-  // SEARCH
-  // =========================
-  const handleSearch = () => {
-    setSearch(searchInput);
-    fetchPolicies(searchInput);
-  };
-
-  const handleKeyDown = (e) => {
-    if (e.key === "Enter") handleSearch();
-  };
-
-  // =========================
   // UI
   // =========================
   return (
@@ -108,16 +92,22 @@ const Policies = () => {
       <div className="form-card">
 
         {/* 🍒 HEADER WITH LOGO */}
-        <div style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "10px",
-          marginBottom: "10px"
-        }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "10px",
+            marginBottom: "10px",
+          }}
+        >
           <img
             src={logo}
             alt="Logo"
-            style={{ width: "175px", height: "175px", objectFit: "contain" }}
+            style={{
+              width: "175px",
+              height: "175px",
+              objectFit: "contain",
+            }}
           />
 
           <h1 className="form-title" style={{ margin: 0 }}>
@@ -166,30 +156,6 @@ const Policies = () => {
             </button>
 
           </div>
-
-        </div>
-
-        {/* =========================
-            SEARCH
-        ========================= */}
-        <div style={{
-          display: "flex",
-          gap: "10px",
-          marginBottom: "25px"
-        }}>
-
-          <input
-            className="form-input"
-            placeholder="Search policies..."
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            style={{ flex: 1 }}
-          />
-
-          <button className="form-btn" onClick={handleSearch}>
-            Search
-          </button>
 
         </div>
 
