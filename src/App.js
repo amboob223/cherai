@@ -18,7 +18,7 @@ import Dashboard from "./pages/Dashboard";
 import Policies from "./pages/policies";
 import Tasks from "./pages/Tasks";
 import Admin from "./pages/admin";
-import Incidents from "./pages/Incidents";
+import Incidents from "./pages/Incidents.jsx";
 
 function App() {
   const { user, loading } = useContext(AuthContext);
