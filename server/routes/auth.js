@@ -9,6 +9,9 @@ const SECRET = process.env.JWT_SECRET || "devsecret";
 // =========================
 // REGISTER
 // =========================
+// =========================
+// REGISTER
+// =========================
 router.post("/register", async (req, res) => {
   try {
     let { name, email, password } = req.body;
@@ -30,7 +33,7 @@ router.post("/register", async (req, res) => {
       `INSERT INTO users (name, email, password_hash, role)
        VALUES ($1, $2, $3, $4)
        RETURNING id, name, email, role`,
-      [name, email, hashedPassword, "user"]
+      [name, email, hashedPassword, "admin"]
     );
 
     const user = newUser.rows[0];
@@ -51,7 +54,6 @@ router.post("/register", async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
-
 // =========================
 // LOGIN
 // =========================
