@@ -1,15 +1,14 @@
 import React, { useEffect, useState, useCallback } from "react";
 import api from "../api/api";
-
-// 👉 logo import
 import logo from "../assests/logo.png";
 
 export default function Tasks() {
-  const [tasks, setTasks] = useState([]);
-  const [users, setUsers] = useState([]);
 
-  const [filterUser, setFilterUser] = useState("");
-  const [search, setSearch] = useState("");
+  // =========================
+  // STATE
+  // =========================
+  const [tasks, setTasks] = useState([]);
+  const [employees, setEmployees] = useState([]);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -20,84 +19,117 @@ export default function Tasks() {
     assigned_to: "",
   });
 
-  // =========================
-  // USERS
-  // =========================
-  useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const res = await api.get("/users");
-        setUsers(res.data || []);
-      } catch (err) {
-        console.error(err);
-      }
-    };
+  const [newEmployee, setNewEmployee] = useState({
+    name: "",
+    email: "",
+  });
 
-    fetchUsers();
+  // =========================
+  // FETCH EMPLOYEES
+  // =========================
+  const fetchEmployees = useCallback(async () => {
+    try {
+      const res = await api.get("/employees");
+      setEmployees(res.data || []);
+    } catch (err) {
+      console.error("EMPLOYEE FETCH ERROR:", err);
+      setError("Failed to load employees");
+    }
   }, []);
 
+  useEffect(() => {
+    fetchEmployees();
+  }, [fetchEmployees]);
+
   // =========================
-  // TASKS
+  // CREATE EMPLOYEE
   // =========================
-  const fetchTasks = useCallback(async () => {
-    setLoading(true);
-    setError("");
+  const createEmployee = async () => {
+    if (!newEmployee.name.trim()) {
+      alert("Employee name required");
+      return;
+    }
 
     try {
-      const res = await api.get("/tasks", {
-        params: { search, assigned_to: filterUser },
-      });
+      await api.post("/employees", newEmployee);
 
+      setNewEmployee({ name: "", email: "" });
+
+      // refresh dropdown instantly
+      fetchEmployees();
+
+    } catch (err) {
+      console.error("CREATE EMPLOYEE ERROR:", err);
+      setError("Failed to create employee");
+    }
+  };
+
+  // =========================
+  // FETCH TASKS
+  // =========================
+  const fetchTasks = useCallback(async () => {
+    try {
+      setLoading(true);
+      const res = await api.get("/tasks");
       setTasks(res.data || []);
     } catch (err) {
-      console.error(err);
+      console.error("TASK FETCH ERROR:", err);
       setError("Failed to load tasks");
     } finally {
       setLoading(false);
     }
-  }, [search, filterUser]);
+  }, []);
 
   useEffect(() => {
-    const delay = setTimeout(() => fetchTasks(), 300);
-    return () => clearTimeout(delay);
+    fetchTasks();
   }, [fetchTasks]);
 
   // =========================
-  // CREATE
+  // CREATE TASK (FIXED + INSTANT UI UPDATE)
   // =========================
   const createTask = async () => {
-    if (!newTask.title.trim()) return alert("Task title required");
+    if (!newTask.title.trim()) {
+      alert("Task title required");
+      return;
+    }
 
     try {
-      await api.post("/tasks", {
+      const res = await api.post("/tasks", {
         title: newTask.title,
         description: newTask.description,
         assigned_to: newTask.assigned_to || null,
         status: "pending",
       });
 
-      setNewTask({ title: "", description: "", assigned_to: "" });
-      fetchTasks();
+      // 🔥 INSTANT RENDER (THIS FIXES YOUR ISSUE)
+      setTasks((prev) => [res.data, ...prev]);
+
+      setNewTask({
+        title: "",
+        description: "",
+        assigned_to: "",
+      });
+
     } catch (err) {
-      console.error(err);
-      alert("Failed to create task");
+      console.error("CREATE TASK ERROR:", err);
+      setError("Failed to create task");
     }
   };
 
   // =========================
-  // DELETE
+  // DELETE TASK
   // =========================
   const deleteTask = async (id) => {
     try {
       await api.delete(`/tasks/${id}`);
-      fetchTasks();
+      setTasks((prev) => prev.filter((t) => (t.id || t._id) !== id));
     } catch (err) {
-      console.error(err);
+      console.error("DELETE TASK ERROR:", err);
     }
   };
 
   // =========================
-  // UPDATE
+  // UPDATE TASK
   // =========================
   const updateTask = async (id, data) => {
     try {
@@ -109,7 +141,7 @@ export default function Tasks() {
         )
       );
     } catch (err) {
-      console.error(err);
+      console.error("UPDATE TASK ERROR:", err);
     }
   };
 
@@ -118,10 +150,9 @@ export default function Tasks() {
   // =========================
   return (
     <div className="page-center">
-
       <div className="form-card">
 
-        {/* 🍒 HEADER WITH LOGO */}
+        {/* HEADER */}
         <div style={{
           display: "flex",
           alignItems: "center",
@@ -140,14 +171,55 @@ export default function Tasks() {
         </div>
 
         <p style={{ color: "#aaa", marginBottom: "20px" }}>
-          Manage assignments and track work progress
+          Manage assignments and track compliance work
         </p>
 
         {error && <p style={{ color: "#ff8fab" }}>{error}</p>}
         {loading && <p>Loading...</p>}
 
-        {/* CREATE TASK */}
-        <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", marginBottom: "20px" }}>
+        {/* =========================
+            CREATE EMPLOYEE
+        ========================= */}
+        <div style={{
+          display: "flex",
+          gap: "10px",
+          flexWrap: "wrap",
+          marginBottom: "20px"
+        }}>
+
+          <input
+            className="form-input"
+            placeholder="Employee name"
+            value={newEmployee.name}
+            onChange={(e) =>
+              setNewEmployee({ ...newEmployee, name: e.target.value })
+            }
+          />
+
+          <input
+            className="form-input"
+            placeholder="Email"
+            value={newEmployee.email}
+            onChange={(e) =>
+              setNewEmployee({ ...newEmployee, email: e.target.value })
+            }
+          />
+
+          <button className="form-btn" onClick={createEmployee}>
+            Add Employee
+          </button>
+
+        </div>
+
+        {/* =========================
+            CREATE TASK
+        ========================= */}
+        <div style={{
+          display: "flex",
+          gap: "10px",
+          flexWrap: "wrap",
+          marginBottom: "20px"
+        }}>
 
           <input
             className="form-input"
@@ -174,10 +246,11 @@ export default function Tasks() {
               setNewTask({ ...newTask, assigned_to: e.target.value })
             }
           >
-            <option value="">Assign User</option>
-            {users.map((u) => (
-              <option key={u.id || u._id} value={u.id || u._id}>
-                {u.name}
+            <option value="">Assign Employee</option>
+
+            {employees.map((emp) => (
+              <option key={emp.id} value={emp.id}>
+                {emp.name}
               </option>
             ))}
           </select>
@@ -188,56 +261,43 @@ export default function Tasks() {
 
         </div>
 
-        {/* FILTERS */}
-        <div style={{ display: "flex", gap: "10px", marginBottom: "20px" }}>
-
-          <select
-            className="form-input"
-            value={filterUser}
-            onChange={(e) => setFilterUser(e.target.value)}
-          >
-            <option value="">All Users</option>
-            {users.map((u) => (
-              <option key={u.id || u._id} value={u.id || u._id}>
-                {u.name}
-              </option>
-            ))}
-          </select>
-
-          <input
-            className="form-input"
-            placeholder="Search tasks..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-
-        </div>
-
-        {/* TASK LIST */}
+        {/* =========================
+            TASK LIST (FIXED RENDERING)
+        ========================= */}
         {tasks.length === 0 ? (
           <p>No tasks found</p>
         ) : (
           tasks.map((task) => (
-            <div key={task.id || task._id} className="page-card" style={{ marginBottom: "15px" }}>
+            <div
+              key={task.id}
+              className="page-card"
+              style={{ marginBottom: "15px" }}
+            >
 
               <h3>{task.title}</h3>
               <p style={{ color: "#ccc" }}>{task.description}</p>
 
-              <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", marginTop: "10px" }}>
+              <div style={{
+                display: "flex",
+                gap: "10px",
+                flexWrap: "wrap",
+                marginTop: "10px"
+              }}>
 
                 <select
                   className="form-input"
                   value={task.assigned_to || ""}
                   onChange={(e) =>
-                    updateTask(task.id || task._id, {
-                      assigned_to: e.target.value || null,
+                    updateTask(task.id, {
+                      assigned_to: e.target.value || null
                     })
                   }
                 >
                   <option value="">Unassigned</option>
-                  {users.map((u) => (
-                    <option key={u.id || u._id} value={u.id || u._id}>
-                      {u.name}
+
+                  {employees.map((emp) => (
+                    <option key={emp.id} value={emp.id}>
+                      {emp.name}
                     </option>
                   ))}
                 </select>
@@ -246,8 +306,8 @@ export default function Tasks() {
                   className="form-input"
                   value={task.status || "pending"}
                   onChange={(e) =>
-                    updateTask(task.id || task._id, {
-                      status: e.target.value,
+                    updateTask(task.id, {
+                      status: e.target.value
                     })
                   }
                 >
@@ -256,7 +316,10 @@ export default function Tasks() {
                   <option value="done">Done</option>
                 </select>
 
-                <button className="logout-btn" onClick={() => deleteTask(task.id || task._id)}>
+                <button
+                  className="logout-btn"
+                  onClick={() => deleteTask(task.id)}
+                >
                   Delete
                 </button>
 

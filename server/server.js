@@ -1,53 +1,39 @@
 const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
-const path = require("path");
 
 dotenv.config();
 
 const app = express();
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
 
 // =========================
 // MIDDLEWARE
 // =========================
-app.use(
-  cors({
-    origin: "http://localhost:3000",
-    credentials: true,
-  })
-);
+app.use(cors({
+  origin: "http://localhost:3000",
+  credentials: true,
+}));
 
-// ⚠️ keep JSON for normal requests
 app.use(express.json());
-
-// =========================
-// STATIC FILES (UPLOADS)
-// =========================
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // =========================
 // ROUTES
 // =========================
 app.use("/api/auth", require("./routes/auth"));
-app.use("/api/incidents", require("./routes/incidents"));
 app.use("/api/users", require("./routes/users"));
 app.use("/api/tasks", require("./routes/tasks"));
 app.use("/api/policies", require("./routes/policies"));
+app.use("/api/incidents", require("./routes/incidents"));
+
+// ✅ EMPLOYEES ROUTE (IMPORTANT)
+app.use("/api/employees", require("./routes/employees"));
 
 // =========================
-// ROOT
+// HEALTH CHECK
 // =========================
 app.get("/", (req, res) => {
-  res.send("Server is running");
-});
-
-// =========================
-// ERROR HANDLER
-// =========================
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ message: "Server error" });
+  res.json({ message: "Server running" });
 });
 
 // =========================

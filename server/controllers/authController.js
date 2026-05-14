@@ -4,9 +4,11 @@ const pool = require("../db");
 
 // LOGIN USER
 const loginUser = async (req, res) => {
+
   const { email, password } = req.body;
 
   try {
+
     // Get user from Postgres
     const userResult = await pool.query(
       "SELECT * FROM users WHERE email=$1",
@@ -14,7 +16,9 @@ const loginUser = async (req, res) => {
     );
 
     if (userResult.rows.length === 0) {
-      return res.status(401).json({ message: "Invalid credentials" });
+      return res.status(401).json({
+        message: "Invalid credentials"
+      });
     }
 
     const user = userResult.rows[0];
@@ -26,12 +30,18 @@ const loginUser = async (req, res) => {
     );
 
     if (!validPassword) {
-      return res.status(401).json({ message: "Invalid credentials" });
+      return res.status(401).json({
+        message: "Invalid credentials"
+      });
     }
 
     // Create token
     const token = jwt.sign(
-      { userId: user.id, role: user.role },
+      {
+        userId: user.id,
+        business_id: user.business_id,
+        role: user.role
+      },
       process.env.JWT_SECRET,
       { expiresIn: "1h" }
     );
@@ -47,13 +57,20 @@ const loginUser = async (req, res) => {
         name: user.name,
         role: user.role,
         email: user.email,
+        business_id: user.business_id
       },
     });
 
   } catch (error) {
+
     console.error("LOGIN ERROR:", error);
-    res.status(500).json({ message: "Server error" });
+
+    res.status(500).json({
+      message: "Server error"
+    });
+
   }
+
 };
 
 module.exports = { loginUser };

@@ -36,12 +36,16 @@ router.post("/register", async (req, res) => {
     const user = newUser.rows[0];
 
     const token = jwt.sign(
-      { id: user.id, email: user.email, role: user.role },
+      {
+        id: user.id,
+        role: user.role
+      },
       SECRET,
       { expiresIn: "8h" }
     );
 
     res.json({ token, user });
+
   } catch (err) {
     console.error("REGISTER ERROR:", err);
     res.status(500).json({ message: "Server error" });
@@ -75,7 +79,10 @@ router.post("/login", async (req, res) => {
     }
 
     const token = jwt.sign(
-      { id: user.id, email: user.email, role: user.role },
+      {
+        id: user.id,
+        role: user.role
+      },
       SECRET,
       { expiresIn: "8h" }
     );
@@ -84,11 +91,12 @@ router.post("/login", async (req, res) => {
       token,
       user: {
         id: user.id,
-        email: user.email,
         name: user.name,
-        role: user.role,
-      },
+        email: user.email,
+        role: user.role
+      }
     });
+
   } catch (err) {
     console.error("LOGIN ERROR:", err);
     res.status(500).json({ message: "Server error" });
