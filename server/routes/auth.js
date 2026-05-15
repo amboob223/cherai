@@ -9,9 +9,6 @@ const SECRET = process.env.JWT_SECRET || "devsecret";
 // =========================
 // REGISTER
 // =========================
-// =========================
-// REGISTER
-// =========================
 router.post("/register", async (req, res) => {
   try {
     let { name, email, password } = req.body;
@@ -24,16 +21,18 @@ router.post("/register", async (req, res) => {
     );
 
     if (existing.rows.length > 0) {
-      return res.status(400).json({ message: "User already exists" });
+      return res.status(400).json({
+        message: "User already exists",
+      });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const newUser = await pool.query(
-      `INSERT INTO users (name, email, password_hash, role)
-       VALUES ($1, $2, $3, $4)
-       RETURNING id, name, email, role`,
-      [name, email, hashedPassword, "admin"]
+      `INSERT INTO users (name, email, password)
+       VALUES ($1, $2, $3)
+       RETURNING id, name, email`,
+      [name, email, hashedPassword]
     );
 
     const user = newUser.rows[0];
@@ -41,19 +40,24 @@ router.post("/register", async (req, res) => {
     const token = jwt.sign(
       {
         id: user.id,
-        role: user.role
       },
       SECRET,
       { expiresIn: "8h" }
     );
 
-    res.json({ token, user });
+    res.json({
+      token,
+      user,
+    });
 
   } catch (err) {
     console.error("REGISTER ERROR:", err);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({
+      message: "Server error",
+    });
   }
 });
+
 // =========================
 // LOGIN
 // =========================
@@ -69,21 +73,27 @@ router.post("/login", async (req, res) => {
     );
 
     if (result.rows.length === 0) {
-      return res.status(401).json({ message: "Invalid credentials" });
+      return res.status(401).json({
+        message: "Invalid credentials",
+      });
     }
 
     const user = result.rows[0];
 
-    const match = await bcrypt.compare(password, user.password_hash);
+    const match = await bcrypt.compare(
+      password,
+      user.password
+    );
 
     if (!match) {
-      return res.status(401).json({ message: "Invalid credentials" });
+      return res.status(401).json({
+        message: "Invalid credentials",
+      });
     }
 
     const token = jwt.sign(
       {
         id: user.id,
-        role: user.role
       },
       SECRET,
       { expiresIn: "8h" }
@@ -95,13 +105,14 @@ router.post("/login", async (req, res) => {
         id: user.id,
         name: user.name,
         email: user.email,
-        role: user.role
-      }
+      },
     });
 
   } catch (err) {
     console.error("LOGIN ERROR:", err);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({
+      message: "Server error",
+    });
   }
 });
 
