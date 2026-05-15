@@ -3,33 +3,42 @@ import api from "../api/api";
 
 const Tasks = () => {
   const [tasks, setTasks] = useState([]);
+  const [employees, setEmployees] = useState([]);
+
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
   // =========================
-  // LOAD TASKS
+  // LOAD TASKS + EMPLOYEES
   // =========================
-  const loadTasks = async () => {
+  const fetchData = async () => {
     try {
-      const res = await api.get("/tasks");
-      setTasks(res.data);
+      const [tasksRes, empRes] = await Promise.all([
+        api.get("/tasks"),
+        api.get("/employees"),
+      ]);
+
+      setTasks(tasksRes.data);
+      setEmployees(empRes.data);
+
     } catch (err) {
-      console.error("LOAD TASKS ERROR:", err);
-      setError("Failed to load tasks");
+      console.error(err);
+      setError("Failed to load data");
     }
   };
 
   useEffect(() => {
-    loadTasks();
+    fetchData();
   }, []);
 
   // =========================
   // CREATE TASK
   // =========================
-  const handleCreate = async (e) => {
+  const createTask = async (e) => {
     e.preventDefault();
 
     try {
@@ -42,39 +51,65 @@ const Tasks = () => {
         description,
       });
 
-      setTasks((prev) => [res.data, ...prev]);
-
+      setTasks([res.data, ...tasks]);
       setTitle("");
       setDescription("");
+      setSuccess("Task created");
 
-      setSuccess("Task created successfully");
     } catch (err) {
-      console.error("CREATE TASK ERROR:", err);
-      setError(err.response?.data?.message || "Failed to create task");
+      console.error(err);
+      setError("Failed to create task");
     } finally {
       setLoading(false);
     }
   };
 
   // =========================
-  // UPDATE TASK STATUS
+  // UPDATE STATUS
   // =========================
-  const updateTask = async (id, newStatus) => {
+  const updateStatus = async (id, status) => {
     try {
-      const task = tasks.find((t) => t.id === id);
-
       const res = await api.put(`/tasks/${id}`, {
-        ...task,
-        status: newStatus,
+        status,
       });
 
-      setTasks((prev) =>
-        prev.map((t) => (t.id === id ? res.data : t))
-      );
+      setTasks(tasks.map((t) => (t.id === id ? res.data : t)));
 
     } catch (err) {
-      console.error("UPDATE TASK ERROR:", err);
-      setError("Failed to update task");
+      console.error(err);
+      setError("Failed to update status");
+    }
+  };
+
+  // =========================
+  // ASSIGN EMPLOYEE
+  // =========================
+  const assignEmployee = async (id, employeeId) => {
+    try {
+      const res = await api.put(`/tasks/${id}`, {
+        assigned_to: employeeId || null,
+      });
+
+      setTasks(tasks.map((t) => (t.id === id ? res.data : t)));
+
+    } catch (err) {
+      console.error(err);
+      setError("Failed to assign employee");
+    }
+  };
+
+  // =========================
+  // DELETE TASK
+  // =========================
+  const deleteTask = async (id) => {
+    try {
+      await api.delete(`/tasks/${id}`);
+      setTasks(tasks.filter((t) => t.id !== id));
+      setSuccess("Task deleted");
+
+    } catch (err) {
+      console.error(err);
+      setError("Failed to delete task");
     }
   };
 
@@ -83,7 +118,7 @@ const Tasks = () => {
       <h2>Tasks</h2>
 
       {/* CREATE */}
-      <form onSubmit={handleCreate}>
+      <form onSubmit={createTask}>
         <input
           placeholder="Title"
           value={title}
@@ -106,18 +141,37 @@ const Tasks = () => {
 
       {/* LIST */}
       {tasks.map((task) => (
-        <div key={task.id}>
+        <div key={task.id} style={{ marginTop: 10 }}>
           <h4>{task.title}</h4>
           <p>{task.description}</p>
 
+          {/* STATUS */}
           <select
             value={task.status}
-            onChange={(e) => updateTask(task.id, e.target.value)}
+            onChange={(e) => updateStatus(task.id, e.target.value)}
           >
             <option value="open">Open</option>
             <option value="in_progress">In Progress</option>
             <option value="done">Done</option>
           </select>
+
+          {/* ASSIGN EMPLOYEE */}
+          <select
+            value={task.assigned_to || ""}
+            onChange={(e) => assignEmployee(task.id, e.target.value)}
+          >
+            <option value="">Unassigned</option>
+
+            {employees.map((emp) => (
+              <option key={emp.id} value={emp.id}>
+                {emp.name}
+              </option>
+            ))}
+          </select>
+
+          <button onClick={() => deleteTask(task.id)}>
+            Delete
+          </button>
         </div>
       ))}
     </div>
