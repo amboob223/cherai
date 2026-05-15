@@ -1,7 +1,10 @@
 import axios from "axios";
 
+// =========================
+// BASE URL (PRODUCTION SAFE)
+// =========================
 const api = axios.create({
-  baseURL: "http://localhost:5000/api",
+  baseURL: "https://cherai-kosc.onrender.com/api",
   withCredentials: true,
 });
 
@@ -10,7 +13,6 @@ const api = axios.create({
 // =========================
 api.interceptors.request.use(
   (config) => {
-
     const token = localStorage.getItem("token");
 
     if (token) {
@@ -18,7 +20,6 @@ api.interceptors.request.use(
     }
 
     return config;
-
   },
   (error) => {
     return Promise.reject(error);
