@@ -5,32 +5,31 @@ const Tasks = () => {
   const [tasks, setTasks] = useState([]);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
   // =========================
-  // GET TASKS
+  // LOAD TASKS
   // =========================
-  const fetchTasks = async () => {
+  const loadTasks = async () => {
     try {
       const res = await api.get("/tasks");
-      setTasks(res.data || []);
+      setTasks(res.data);
     } catch (err) {
-      console.error("FETCH TASKS ERROR:", err);
+      console.error("LOAD TASKS ERROR:", err);
       setError("Failed to load tasks");
     }
   };
 
   useEffect(() => {
-    fetchTasks();
+    loadTasks();
   }, []);
 
   // =========================
   // CREATE TASK
   // =========================
-  const createTask = async (e) => {
+  const handleCreate = async (e) => {
     e.preventDefault();
 
     try {
@@ -39,16 +38,16 @@ const Tasks = () => {
       setSuccess("");
 
       const res = await api.post("/tasks", {
-        title: title.trim(),
-        description: description.trim(),
+        title,
+        description,
       });
 
       setTasks((prev) => [res.data, ...prev]);
 
       setTitle("");
       setDescription("");
-      setSuccess("Task created successfully");
 
+      setSuccess("Task created successfully");
     } catch (err) {
       console.error("CREATE TASK ERROR:", err);
       setError(err.response?.data?.message || "Failed to create task");
@@ -58,34 +57,19 @@ const Tasks = () => {
   };
 
   // =========================
-  // DELETE TASK
-  // =========================
-  const deleteTask = async (id) => {
-    try {
-      await api.delete(`/tasks/${id}`);
-
-      setTasks((prev) => prev.filter((task) => task.id !== id));
-
-      setSuccess("Task deleted successfully");
-    } catch (err) {
-      console.error("DELETE TASK ERROR:", err);
-      setError("Failed to delete task");
-    }
-  };
-
-  // =========================
   // UPDATE TASK STATUS
   // =========================
-  const updateStatus = async (id, status) => {
+  const updateTask = async (id, newStatus) => {
     try {
+      const task = tasks.find((t) => t.id === id);
+
       const res = await api.put(`/tasks/${id}`, {
-        status,
+        ...task,
+        status: newStatus,
       });
 
       setTasks((prev) =>
-        prev.map((task) =>
-          task.id === id ? res.data : task
-        )
+        prev.map((t) => (t.id === id ? res.data : t))
       );
 
     } catch (err) {
@@ -95,11 +79,11 @@ const Tasks = () => {
   };
 
   return (
-    <div style={{ padding: "20px" }}>
+    <div>
       <h2>Tasks</h2>
 
-      {/* CREATE FORM */}
-      <form onSubmit={createTask}>
+      {/* CREATE */}
+      <form onSubmit={handleCreate}>
         <input
           placeholder="Title"
           value={title}
@@ -117,28 +101,23 @@ const Tasks = () => {
         </button>
       </form>
 
-      {/* STATUS MESSAGES */}
       {error && <p style={{ color: "red" }}>{error}</p>}
       {success && <p style={{ color: "green" }}>{success}</p>}
 
-      {/* TASK LIST */}
+      {/* LIST */}
       {tasks.map((task) => (
-        <div key={task.id} style={{ marginTop: "10px" }}>
+        <div key={task.id}>
           <h4>{task.title}</h4>
           <p>{task.description}</p>
 
           <select
-            value={task.status || "open"}
-            onChange={(e) => updateStatus(task.id, e.target.value)}
+            value={task.status}
+            onChange={(e) => updateTask(task.id, e.target.value)}
           >
             <option value="open">Open</option>
             <option value="in_progress">In Progress</option>
             <option value="done">Done</option>
           </select>
-
-          <button onClick={() => deleteTask(task.id)}>
-            Delete
-          </button>
         </div>
       ))}
     </div>
