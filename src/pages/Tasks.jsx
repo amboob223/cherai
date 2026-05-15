@@ -16,9 +16,9 @@ const Tasks = () => {
   const fetchTasks = async () => {
     try {
       const res = await api.get("/tasks");
-      setTasks(res.data);
+      setTasks(res.data || []);
     } catch (err) {
-      console.error(err);
+      console.error("FETCH TASKS ERROR:", err);
       setError("Failed to load tasks");
     }
   };
@@ -39,17 +39,18 @@ const Tasks = () => {
       setSuccess("");
 
       const res = await api.post("/tasks", {
-        title,
-        description,
+        title: title.trim(),
+        description: description.trim(),
       });
 
-      setTasks([res.data, ...tasks]);
+      setTasks((prev) => [res.data, ...prev]);
+
       setTitle("");
       setDescription("");
       setSuccess("Task created successfully");
 
     } catch (err) {
-      console.error(err);
+      console.error("CREATE TASK ERROR:", err);
       setError(err.response?.data?.message || "Failed to create task");
     } finally {
       setLoading(false);
@@ -57,18 +58,17 @@ const Tasks = () => {
   };
 
   // =========================
-  // DELETE TASK (FIXED)
+  // DELETE TASK
   // =========================
   const deleteTask = async (id) => {
     try {
       await api.delete(`/tasks/${id}`);
 
-      setTasks(tasks.filter((task) => task.id !== id));
+      setTasks((prev) => prev.filter((task) => task.id !== id));
 
       setSuccess("Task deleted successfully");
-
     } catch (err) {
-      console.error("DELETE ERROR:", err);
+      console.error("DELETE TASK ERROR:", err);
       setError("Failed to delete task");
     }
   };
@@ -78,26 +78,27 @@ const Tasks = () => {
   // =========================
   const updateStatus = async (id, status) => {
     try {
-      const task = tasks.find((t) => t.id === id);
-
       const res = await api.put(`/tasks/${id}`, {
-        ...task,
         status,
       });
 
-      setTasks(tasks.map((t) => (t.id === id ? res.data : t)));
+      setTasks((prev) =>
+        prev.map((task) =>
+          task.id === id ? res.data : task
+        )
+      );
 
     } catch (err) {
-      console.error("UPDATE ERROR:", err);
+      console.error("UPDATE TASK ERROR:", err);
       setError("Failed to update task");
     }
   };
 
   return (
-    <div>
+    <div style={{ padding: "20px" }}>
       <h2>Tasks</h2>
 
-      {/* CREATE */}
+      {/* CREATE FORM */}
       <form onSubmit={createTask}>
         <input
           placeholder="Title"
@@ -116,17 +117,18 @@ const Tasks = () => {
         </button>
       </form>
 
+      {/* STATUS MESSAGES */}
       {error && <p style={{ color: "red" }}>{error}</p>}
       {success && <p style={{ color: "green" }}>{success}</p>}
 
-      {/* LIST */}
+      {/* TASK LIST */}
       {tasks.map((task) => (
         <div key={task.id} style={{ marginTop: "10px" }}>
           <h4>{task.title}</h4>
           <p>{task.description}</p>
 
           <select
-            value={task.status}
+            value={task.status || "open"}
             onChange={(e) => updateStatus(task.id, e.target.value)}
           >
             <option value="open">Open</option>
