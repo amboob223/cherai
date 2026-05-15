@@ -7,16 +7,14 @@ const pool = require("../db");
 // =========================
 router.get("/", async (req, res) => {
   try {
-    const result = await pool.query(`
-      SELECT *
-      FROM tasks
-      ORDER BY id DESC
-    `);
+    const result = await pool.query(
+      "SELECT * FROM tasks ORDER BY id DESC"
+    );
 
     res.json(result.rows);
   } catch (err) {
     console.error("GET TASKS ERROR:", err);
-    res.status(500).json({ error: "Failed to fetch tasks" });
+    res.status(500).json({ message: "Server error" });
   }
 });
 
@@ -28,27 +26,27 @@ router.post("/", async (req, res) => {
     const { title, description } = req.body;
 
     if (!title) {
-      return res.status(400).json({ error: "Title is required" });
+      return res.status(400).json({ message: "Title is required" });
     }
 
     const result = await pool.query(
       `
-      INSERT INTO tasks (title, description, status)
-      VALUES ($1, $2, 'open')
+      INSERT INTO tasks (title, description, status, assigned_to)
+      VALUES ($1, $2, 'open', NULL)
       RETURNING *
       `,
-      [title, description || ""]
+      [title, description || null]
     );
 
     res.status(201).json(result.rows[0]);
   } catch (err) {
     console.error("CREATE TASK ERROR:", err);
-    res.status(500).json({ error: "Failed to create task" });
+    res.status(500).json({ message: "Server error" });
   }
 });
 
 // =========================
-// UPDATE TASK (STATUS + ASSIGNMENT)
+// UPDATE TASK (STATUS + ASSIGN)
 // =========================
 router.put("/:id", async (req, res) => {
   try {
@@ -64,17 +62,13 @@ router.put("/:id", async (req, res) => {
       WHERE id = $3
       RETURNING *
       `,
-      [status, assigned_to, id]
+      [status || null, assigned_to || null, id]
     );
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: "Task not found" });
-    }
 
     res.json(result.rows[0]);
   } catch (err) {
     console.error("UPDATE TASK ERROR:", err);
-    res.status(500).json({ error: "Failed to update task" });
+    res.status(500).json({ message: "Server error" });
   }
 });
 
@@ -85,19 +79,12 @@ router.delete("/:id", async (req, res) => {
   try {
     const { id } = req.params;
 
-    const result = await pool.query(
-      `DELETE FROM tasks WHERE id = $1 RETURNING *`,
-      [id]
-    );
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: "Task not found" });
-    }
+    await pool.query("DELETE FROM tasks WHERE id = $1", [id]);
 
     res.json({ message: "Task deleted" });
   } catch (err) {
     console.error("DELETE TASK ERROR:", err);
-    res.status(500).json({ error: "Failed to delete task" });
+    res.status(500).json({ message: "Server error" });
   }
 });
 

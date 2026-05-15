@@ -8,12 +8,11 @@ const Tasks = () => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
 
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
   // =========================
-  // LOAD TASKS + EMPLOYEES
+  // LOAD DATA
   // =========================
   const fetchData = async () => {
     try {
@@ -24,7 +23,6 @@ const Tasks = () => {
 
       setTasks(tasksRes.data);
       setEmployees(empRes.data);
-
     } catch (err) {
       console.error(err);
       setError("Failed to load data");
@@ -42,59 +40,34 @@ const Tasks = () => {
     e.preventDefault();
 
     try {
-      setLoading(true);
-      setError("");
-      setSuccess("");
-
       const res = await api.post("/tasks", {
         title,
         description,
       });
 
-      setTasks([res.data, ...tasks]);
+      setTasks((prev) => [res.data, ...prev]);
       setTitle("");
       setDescription("");
       setSuccess("Task created");
-
     } catch (err) {
       console.error(err);
       setError("Failed to create task");
-    } finally {
-      setLoading(false);
     }
   };
 
   // =========================
-  // UPDATE STATUS
+  // SINGLE UPDATE FUNCTION (IMPORTANT FIX)
   // =========================
-  const updateStatus = async (id, status) => {
+  const updateTask = async (id, data) => {
     try {
-      const res = await api.put(`/tasks/${id}`, {
-        status,
-      });
+      const res = await api.put(`/tasks/${id}`, data);
 
-      setTasks(tasks.map((t) => (t.id === id ? res.data : t)));
-
+      setTasks((prev) =>
+        prev.map((t) => (t.id === id ? res.data : t))
+      );
     } catch (err) {
       console.error(err);
-      setError("Failed to update status");
-    }
-  };
-
-  // =========================
-  // ASSIGN EMPLOYEE
-  // =========================
-  const assignEmployee = async (id, employeeId) => {
-    try {
-      const res = await api.put(`/tasks/${id}`, {
-        assigned_to: employeeId || null,
-      });
-
-      setTasks(tasks.map((t) => (t.id === id ? res.data : t)));
-
-    } catch (err) {
-      console.error(err);
-      setError("Failed to assign employee");
+      setError("Failed to update task");
     }
   };
 
@@ -104,9 +77,8 @@ const Tasks = () => {
   const deleteTask = async (id) => {
     try {
       await api.delete(`/tasks/${id}`);
-      setTasks(tasks.filter((t) => t.id !== id));
+      setTasks((prev) => prev.filter((t) => t.id !== id));
       setSuccess("Task deleted");
-
     } catch (err) {
       console.error(err);
       setError("Failed to delete task");
@@ -131,9 +103,7 @@ const Tasks = () => {
           onChange={(e) => setDescription(e.target.value)}
         />
 
-        <button disabled={loading}>
-          {loading ? "Creating..." : "Create Task"}
-        </button>
+        <button>Create Task</button>
       </form>
 
       {error && <p style={{ color: "red" }}>{error}</p>}
@@ -147,18 +117,24 @@ const Tasks = () => {
 
           {/* STATUS */}
           <select
-            value={task.status}
-            onChange={(e) => updateStatus(task.id, e.target.value)}
+            value={task.status || "open"}
+            onChange={(e) =>
+              updateTask(task.id, { status: e.target.value })
+            }
           >
             <option value="open">Open</option>
             <option value="in_progress">In Progress</option>
             <option value="done">Done</option>
           </select>
 
-          {/* ASSIGN EMPLOYEE */}
+          {/* EMPLOYEE ASSIGN */}
           <select
             value={task.assigned_to || ""}
-            onChange={(e) => assignEmployee(task.id, e.target.value)}
+            onChange={(e) =>
+              updateTask(task.id, {
+                assigned_to: e.target.value || null,
+              })
+            }
           >
             <option value="">Unassigned</option>
 
