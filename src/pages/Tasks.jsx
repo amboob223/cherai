@@ -3,8 +3,6 @@ import api from "../api/api";
 
 const Tasks = () => {
   const [tasks, setTasks] = useState([]);
-  const [employees, setEmployees] = useState([]);
-
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
 
@@ -13,26 +11,20 @@ const Tasks = () => {
   const [success, setSuccess] = useState("");
 
   // =========================
-  // LOAD TASKS + EMPLOYEES
+  // GET TASKS
   // =========================
-  const fetchData = async () => {
+  const fetchTasks = async () => {
     try {
-      const [tasksRes, empRes] = await Promise.all([
-        api.get("/tasks"),
-        api.get("/employees"),
-      ]);
-
-      setTasks(tasksRes.data);
-      setEmployees(empRes.data);
-
+      const res = await api.get("/tasks");
+      setTasks(res.data);
     } catch (err) {
       console.error(err);
-      setError("Failed to load data");
+      setError("Failed to load tasks");
     }
   };
 
   useEffect(() => {
-    fetchData();
+    fetchTasks();
   }, []);
 
   // =========================
@@ -54,62 +46,50 @@ const Tasks = () => {
       setTasks([res.data, ...tasks]);
       setTitle("");
       setDescription("");
-      setSuccess("Task created");
+      setSuccess("Task created successfully");
 
     } catch (err) {
       console.error(err);
-      setError("Failed to create task");
+      setError(err.response?.data?.message || "Failed to create task");
     } finally {
       setLoading(false);
     }
   };
 
   // =========================
-  // UPDATE STATUS
+  // DELETE TASK (FIXED)
+  // =========================
+  const deleteTask = async (id) => {
+    try {
+      await api.delete(`/tasks/${id}`);
+
+      setTasks(tasks.filter((task) => task.id !== id));
+
+      setSuccess("Task deleted successfully");
+
+    } catch (err) {
+      console.error("DELETE ERROR:", err);
+      setError("Failed to delete task");
+    }
+  };
+
+  // =========================
+  // UPDATE TASK STATUS
   // =========================
   const updateStatus = async (id, status) => {
     try {
+      const task = tasks.find((t) => t.id === id);
+
       const res = await api.put(`/tasks/${id}`, {
+        ...task,
         status,
       });
 
       setTasks(tasks.map((t) => (t.id === id ? res.data : t)));
 
     } catch (err) {
-      console.error(err);
-      setError("Failed to update status");
-    }
-  };
-
-  // =========================
-  // ASSIGN EMPLOYEE
-  // =========================
-  const assignEmployee = async (id, employeeId) => {
-    try {
-      const res = await api.put(`/tasks/${id}`, {
-        assigned_to: employeeId || null,
-      });
-
-      setTasks(tasks.map((t) => (t.id === id ? res.data : t)));
-
-    } catch (err) {
-      console.error(err);
-      setError("Failed to assign employee");
-    }
-  };
-
-  // =========================
-  // DELETE TASK
-  // =========================
-  const deleteTask = async (id) => {
-    try {
-      await api.delete(`/tasks/${id}`);
-      setTasks(tasks.filter((t) => t.id !== id));
-      setSuccess("Task deleted");
-
-    } catch (err) {
-      console.error(err);
-      setError("Failed to delete task");
+      console.error("UPDATE ERROR:", err);
+      setError("Failed to update task");
     }
   };
 
@@ -141,11 +121,10 @@ const Tasks = () => {
 
       {/* LIST */}
       {tasks.map((task) => (
-        <div key={task.id} style={{ marginTop: 10 }}>
+        <div key={task.id} style={{ marginTop: "10px" }}>
           <h4>{task.title}</h4>
           <p>{task.description}</p>
 
-          {/* STATUS */}
           <select
             value={task.status}
             onChange={(e) => updateStatus(task.id, e.target.value)}
@@ -153,20 +132,6 @@ const Tasks = () => {
             <option value="open">Open</option>
             <option value="in_progress">In Progress</option>
             <option value="done">Done</option>
-          </select>
-
-          {/* ASSIGN EMPLOYEE */}
-          <select
-            value={task.assigned_to || ""}
-            onChange={(e) => assignEmployee(task.id, e.target.value)}
-          >
-            <option value="">Unassigned</option>
-
-            {employees.map((emp) => (
-              <option key={emp.id} value={emp.id}>
-                {emp.name}
-              </option>
-            ))}
           </select>
 
           <button onClick={() => deleteTask(task.id)}>
