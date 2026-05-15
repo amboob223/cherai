@@ -9,8 +9,6 @@ router.post("/", async (req, res) => {
   try {
     const { title, description } = req.body;
 
-    console.log("CREATE TASK BODY:", req.body);
-
     if (!title || title.trim() === "") {
       return res.status(400).json({ message: "Title is required" });
     }
@@ -24,10 +22,10 @@ router.post("/", async (req, res) => {
       [title.trim(), description || null]
     );
 
-    return res.status(201).json(result.rows[0]);
+    res.status(201).json(result.rows[0]);
   } catch (err) {
     console.error("CREATE TASK ERROR:", err);
-    return res.status(500).json({ message: "Server error creating task" });
+    res.status(500).json({ message: "Server error" });
   }
 });
 
@@ -40,15 +38,15 @@ router.get("/", async (req, res) => {
       `SELECT * FROM tasks ORDER BY created_at DESC`
     );
 
-    return res.json(result.rows);
+    res.json(result.rows);
   } catch (err) {
-    console.error("GET TASKS ERROR:", err);
-    return res.status(500).json({ message: "Server error fetching tasks" });
+    console.error("GET TASK ERROR:", err);
+    res.status(500).json({ message: "Server error" });
   }
 });
 
 // =========================
-// UPDATE TASK (FIXED)
+// UPDATE TASK
 // =========================
 router.put("/:id", async (req, res) => {
   try {
@@ -71,10 +69,37 @@ router.put("/:id", async (req, res) => {
       return res.status(404).json({ message: "Task not found" });
     }
 
-    return res.json(result.rows[0]);
+    res.json(result.rows[0]);
   } catch (err) {
     console.error("UPDATE TASK ERROR:", err);
-    return res.status(500).json({ message: "Server error updating task" });
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// =========================
+// DELETE TASK (FIXED - YOUR ISSUE)
+// =========================
+router.delete("/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const result = await pool.query(
+      `DELETE FROM tasks WHERE id = $1 RETURNING *`,
+      [id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: "Task not found" });
+    }
+
+    res.json({
+      message: "Task deleted successfully",
+      task: result.rows[0],
+    });
+
+  } catch (err) {
+    console.error("DELETE TASK ERROR:", err);
+    res.status(500).json({ message: "Server error" });
   }
 });
 
