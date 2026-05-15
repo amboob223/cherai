@@ -8,26 +8,26 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // =========================
-// MIDDLEWARE
+// CORS (PRODUCTION SAFE)
 // =========================
 
-// Allowed origins (dev + production)
 const allowedOrigins = [
   "http://localhost:3000",
-  process.env.CLIENT_URL
+  "http://localhost:5173",
+  "https://thecherai.netlify.app"
 ];
 
-// CORS setup
 app.use(cors({
   origin: function (origin, callback) {
-    // allow requests with no origin (Postman / mobile apps)
+    // allow REST tools like Postman
     if (!origin) return callback(null, true);
 
     if (allowedOrigins.includes(origin)) {
       return callback(null, true);
     }
 
-    return callback(new Error("Blocked by CORS: Not allowed"));
+    console.log("❌ Blocked by CORS:", origin);
+    return callback(new Error("CORS not allowed"), false);
   },
   credentials: true
 }));
@@ -59,4 +59,5 @@ app.get("/", (req, res) => {
 // =========================
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
+  console.log("🌍 Allowed origins:", allowedOrigins);
 });
