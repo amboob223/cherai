@@ -26,7 +26,7 @@ router.post("/", async (req, res) => {
 
   } catch (err) {
     console.error("CREATE EMPLOYEE ERROR:", err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: "Server error" });
   }
 });
 
@@ -37,7 +37,7 @@ router.get("/", async (req, res) => {
   try {
     const result = await pool.query(
       `
-      SELECT id, name, email
+      SELECT id, name, email, role
       FROM users
       WHERE role = 'employee'
       ORDER BY id DESC
@@ -48,7 +48,7 @@ router.get("/", async (req, res) => {
 
   } catch (err) {
     console.error("GET EMPLOYEES ERROR:", err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: "Server error" });
   }
 });
 
