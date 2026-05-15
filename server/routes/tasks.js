@@ -9,8 +9,10 @@ router.post("/", async (req, res) => {
   try {
     const { title, description } = req.body;
 
-    if (!title) {
-      return res.status(400).json({ error: "Title is required" });
+    console.log("CREATE TASK BODY:", req.body);
+
+    if (!title || title.trim() === "") {
+      return res.status(400).json({ message: "Title is required" });
     }
 
     const result = await pool.query(
@@ -19,14 +21,13 @@ router.post("/", async (req, res) => {
       VALUES ($1, $2, 'open')
       RETURNING *
       `,
-      [title, description || null]
+      [title.trim(), description || null]
     );
 
-    res.status(201).json(result.rows[0]);
-
+    return res.status(201).json(result.rows[0]);
   } catch (err) {
     console.error("CREATE TASK ERROR:", err);
-    res.status(500).json({ error: err.message });
+    return res.status(500).json({ message: "Server error creating task" });
   }
 });
 
@@ -39,11 +40,41 @@ router.get("/", async (req, res) => {
       `SELECT * FROM tasks ORDER BY created_at DESC`
     );
 
-    res.json(result.rows);
-
+    return res.json(result.rows);
   } catch (err) {
     console.error("GET TASKS ERROR:", err);
-    res.status(500).json({ error: err.message });
+    return res.status(500).json({ message: "Server error fetching tasks" });
+  }
+});
+
+// =========================
+// UPDATE TASK (FIXED)
+// =========================
+router.put("/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { title, description, status } = req.body;
+
+    const result = await pool.query(
+      `
+      UPDATE tasks
+      SET title = $1,
+          description = $2,
+          status = $3
+      WHERE id = $4
+      RETURNING *
+      `,
+      [title, description, status, id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: "Task not found" });
+    }
+
+    return res.json(result.rows[0]);
+  } catch (err) {
+    console.error("UPDATE TASK ERROR:", err);
+    return res.status(500).json({ message: "Server error updating task" });
   }
 });
 
