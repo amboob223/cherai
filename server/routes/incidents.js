@@ -1,6 +1,22 @@
 const express = require("express");
 const router = express.Router();
 const pool = require("../db");
+const multer = require("multer");
+const path = require("path");
+
+// =========================
+// FILE UPLOAD CONFIG
+// =========================
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "uploads/");
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + "-" + file.originalname);
+  },
+});
+
+const upload = multer({ storage });
 
 // =========================
 // GET INCIDENTS
@@ -19,40 +35,27 @@ router.get("/", async (req, res) => {
 });
 
 // =========================
-// CREATE INCIDENT (supports optional upload field)
+// CREATE INCIDENT (FIXED)
 // =========================
-router.post("/", async (req, res) => {
+router.post("/", upload.single("attachment"), async (req, res) => {
   try {
-    const {
-      title,
-      description,
-      severity,
-      file_url, // 👈 for upload support (S3 / Cloudinary / local later)
-    } = req.body;
+    const { title, description } = req.body || {};
 
     if (!title) {
       return res.status(400).json({ message: "Title is required" });
     }
 
+    const file_url = req.file
+      ? `/uploads/${req.file.filename}`
+      : null;
+
     const result = await pool.query(
       `
-      INSERT INTO incidents (
-        title,
-        description,
-        severity,
-        file_url,
-        status,
-        created_at
-      )
-      VALUES ($1, $2, $3, $4, 'open', NOW())
+      INSERT INTO incidents (title, description, status, file_url, created_at)
+      VALUES ($1, $2, 'open', $3, NOW())
       RETURNING *
       `,
-      [
-        title,
-        description || null,
-        severity || "low",
-        file_url || null,
-      ]
+      [title, description || null, file_url]
     );
 
     res.status(201).json(result.rows[0]);
