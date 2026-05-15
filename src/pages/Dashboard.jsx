@@ -12,23 +12,22 @@ const Dashboard = () => {
   const [error, setError] = useState("");
 
   // =========================
-  // FETCH STATS (SAFE VERSION)
+  // SAFE FETCH (NO CRASH)
   // =========================
   const fetchDashboard = async () => {
-    try {
-      setLoading(true);
-      setError("");
+    setLoading(true);
+    setError("");
 
-      const [tasksRes, policiesRes, incidentsRes] = await Promise.all([
-        api.get("/tasks"),
-        api.get("/policies"),
-        api.get("/incidents"),
-      ]);
+    try {
+      // run requests individually so one failure doesn't break everything
+      const tasksRes = await api.get("/tasks").catch(() => ({ data: [] }));
+      const policiesRes = await api.get("/policies").catch(() => ({ data: [] }));
+      const incidentsRes = await api.get("/incidents").catch(() => ({ data: [] }));
 
       setStats({
-        tasks: tasksRes.data?.length || 0,
-        policies: policiesRes.data?.length || 0,
-        incidents: incidentsRes.data?.length || 0,
+        tasks: Array.isArray(tasksRes.data) ? tasksRes.data.length : 0,
+        policies: Array.isArray(policiesRes.data) ? policiesRes.data.length : 0,
+        incidents: Array.isArray(incidentsRes.data) ? incidentsRes.data.length : 0,
       });
 
     } catch (err) {
@@ -53,33 +52,22 @@ const Dashboard = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // =========================
-  // UI
-  // =========================
   return (
     <div className="page-center">
-
       <div className="form-card">
 
-        <h1 className="form-title">
-          Security Dashboard
-        </h1>
+        <h1 className="form-title">Security Dashboard</h1>
 
         <p style={{ color: "#aaa", marginBottom: "20px" }}>
           Live system overview
         </p>
 
         {error && (
-          <p style={{ color: "#ff8fab" }}>
-            {error}
-          </p>
+          <p style={{ color: "#ff8fab" }}>{error}</p>
         )}
 
         {loading && <p>Loading dashboard...</p>}
 
-        {/* =========================
-            STATS
-        ========================= */}
         <div
           style={{
             display: "grid",
@@ -90,30 +78,23 @@ const Dashboard = () => {
         >
 
           <div className="page-card">
-            <h2 style={{ color: "#ff4d6d" }}>
-              {stats.tasks}
-            </h2>
+            <h2 style={{ color: "#ff4d6d" }}>{stats.tasks}</h2>
             <p>Tasks</p>
           </div>
 
           <div className="page-card">
-            <h2 style={{ color: "#ff4d6d" }}>
-              {stats.policies}
-            </h2>
+            <h2 style={{ color: "#ff4d6d" }}>{stats.policies}</h2>
             <p>Policies</p>
           </div>
 
           <div className="page-card">
-            <h2 style={{ color: "#ff4d6d" }}>
-              {stats.incidents}
-            </h2>
+            <h2 style={{ color: "#ff4d6d" }}>{stats.incidents}</h2>
             <p>Incidents</p>
           </div>
 
         </div>
 
       </div>
-
     </div>
   );
 };
