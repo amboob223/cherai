@@ -38,16 +38,12 @@ function App() {
 
   return (
     <Router>
-
       <div className="main-content">
 
-        {/* =========================
-            NAVBAR
-        ========================= */}
+        {/* NAVBAR ONLY IF LOGGED IN */}
         {user && <Navbar />}
 
         <div className="main-content">
-
           <Routes>
 
             {/* =========================
@@ -134,25 +130,18 @@ function App() {
             />
 
             {/* =========================
-                DEFAULT ROUTE
+                DEFAULT ROUTE (FIXED)
+                LOGIN FIRST ALWAYS
             ========================= */}
 
             <Route
               path="/"
-              element={
-                <Navigate
-                  to={user ? "/dashboard" : "/login"}
-                  replace
-                />
-              }
+              element={<Navigate to="/login" replace />}
             />
 
           </Routes>
-
         </div>
-
       </div>
-
     </Router>
   );
 }
