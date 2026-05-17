@@ -1,6 +1,8 @@
 const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
+const path = require("path");
+const fs = require("fs");
 
 dotenv.config();
 
@@ -8,29 +10,29 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // =========================
-// CORS (PRODUCTION SAFE)
+// CORS
 // =========================
-
 const allowedOrigins = [
   "http://localhost:3000",
   "http://localhost:5173",
-  "https://thecherai.netlify.app"
+  "https://thecherai.netlify.app",
 ];
 
-app.use(cors({
-  origin: function (origin, callback) {
-    // allow REST tools like Postman
-    if (!origin) return callback(null, true);
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      if (!origin) return callback(null, true);
 
-    if (allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    }
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
 
-    console.log("❌ Blocked by CORS:", origin);
-    return callback(new Error("CORS not allowed"), false);
-  },
-  credentials: true
-}));
+      console.log("❌ Blocked by CORS:", origin);
+      return callback(new Error("CORS not allowed"), false);
+    },
+    credentials: true,
+  })
+);
 
 app.use(express.json());
 
@@ -50,9 +52,22 @@ app.use("/api/employees", require("./routes/employees"));
 app.get("/", (req, res) => {
   res.json({
     message: "Server running",
-    status: "OK"
+    status: "OK",
   });
 });
+
+// =========================
+// UPLOADS (FIXED FOR RENDER)
+// =========================
+const uploadPath = path.join(__dirname, "uploads");
+
+// ensure folder exists
+if (!fs.existsSync(uploadPath)) {
+  fs.mkdirSync(uploadPath, { recursive: true });
+}
+
+// serve uploads publicly
+app.use("/uploads", express.static(uploadPath));
 
 // =========================
 // START SERVER

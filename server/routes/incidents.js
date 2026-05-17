@@ -5,7 +5,7 @@ const multer = require("multer");
 const path = require("path");
 
 // =========================
-// FILE UPLOAD CONFIG
+// MULTER CONFIG
 // =========================
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -35,11 +35,11 @@ router.get("/", async (req, res) => {
 });
 
 // =========================
-// CREATE INCIDENT (FIXED)
+// CREATE INCIDENT
 // =========================
 router.post("/", upload.single("attachment"), async (req, res) => {
   try {
-    const { title, description } = req.body || {};
+    const { title, description } = req.body;
 
     if (!title) {
       return res.status(400).json({ message: "Title is required" });
@@ -66,7 +66,7 @@ router.post("/", upload.single("attachment"), async (req, res) => {
 });
 
 // =========================
-// UPDATE INCIDENT STATUS
+// UPDATE INCIDENT
 // =========================
 router.put("/:id", async (req, res) => {
   try {
