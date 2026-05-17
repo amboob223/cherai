@@ -207,8 +207,8 @@ const Tasks = () => {
             src={logo}
             alt="CherAI Logo"
             style={{
-              width: "40px",
-              height: "40px",
+              width: "175px",
+              height: "175px",
               objectFit: "contain",
             }}
           />

@@ -49,6 +49,13 @@ select {
   resize: vertical;
 }
 
+
+.app-logo {
+  width: 175px;
+  height: 175px;
+  object-fit: contain;
+}
+
 .form-btn,
 .logout-btn {
   background: #dc2626;
