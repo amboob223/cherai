@@ -4,23 +4,28 @@ import logo from "../assests/logo.png";
 
 const Incidents = () => {
   const [incidents, setIncidents] = useState([]);
+
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [file, setFile] = useState(null);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   // =========================
-  // FETCH
+  // FETCH INCIDENTS
   // =========================
   const fetchIncidents = useCallback(async () => {
     try {
       setLoading(true);
+      setError("");
+
       const res = await api.get("/incidents");
+
       setIncidents(res.data || []);
     } catch (err) {
-      console.error(err);
+      console.error("FETCH INCIDENTS ERROR:", err);
       setError("Failed to load incidents");
     } finally {
       setLoading(false);
@@ -32,10 +37,14 @@ const Incidents = () => {
   }, [fetchIncidents]);
 
   // =========================
-  // FILE
+  // FILE CHANGE
   // =========================
   const handleFileChange = (e) => {
-    setFile(e.target.files?.[0] || null);
+    const selectedFile = e.target.files?.[0];
+
+    if (!selectedFile) return;
+
+    setFile(selectedFile);
   };
 
   // =========================
@@ -45,7 +54,16 @@ const Incidents = () => {
     e.preventDefault();
 
     try {
+      setError("");
+      setSuccess("");
+
+      if (!title.trim()) {
+        alert("Title required");
+        return;
+      }
+
       const formData = new FormData();
+
       formData.append("title", title);
       formData.append("description", description);
 
@@ -53,24 +71,51 @@ const Incidents = () => {
         formData.append("attachment", file);
       }
 
-      const res = await api.post("/incidents", formData);
+      const res = await api.post(
+        "/incidents",
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
 
-      setIncidents([res.data, ...incidents]);
+      setIncidents((prev) => [res.data, ...prev]);
+
       setTitle("");
       setDescription("");
       setFile(null);
+
+      setSuccess("Incident created");
+
     } catch (err) {
-      console.error("Create incident error:", err);
-      alert("Failed to create incident");
+      console.error("CREATE INCIDENT ERROR:", err);
+
+      setError(
+        err.response?.data?.message ||
+        "Failed to create incident"
+      );
     }
   };
 
   // =========================
-  // DELETE
+  // DELETE INCIDENT
   // =========================
   const handleDelete = async (id) => {
-    await api.delete(`/incidents/${id}`);
-    setIncidents(incidents.filter((i) => i.id !== id));
+    try {
+
+      await api.delete(`/incidents/${id}`);
+
+      setIncidents((prev) =>
+        prev.filter((i) => i.id !== id)
+      );
+
+    } catch (err) {
+      console.error("DELETE INCIDENT ERROR:", err);
+
+      setError("Failed to delete incident");
+    }
   };
 
   // =========================
@@ -78,49 +123,172 @@ const Incidents = () => {
   // =========================
   return (
     <div className="page-center">
+
       <div className="form-card">
 
-        <div style={{ display: "flex", gap: 10 }}>
-          <img src={logo} style={{ width: 40 }} />
-          <h1>Incidents</h1>
+        {/* HEADER */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "10px",
+            marginBottom: "10px",
+          }}
+        >
+          <img
+            src={logo}
+            alt="CherAI Logo"
+            style={{
+              width: "40px",
+              height: "40px",
+              objectFit: "contain",
+            }}
+          />
+
+          <h1 className="form-title" style={{ margin: 0 }}>
+            Incidents
+          </h1>
         </div>
 
+        <p
+          style={{
+            color: "#aaa",
+            marginBottom: "25px",
+          }}
+        >
+          Report and track compliance incidents
+        </p>
+
+        {loading && (
+          <p style={{ color: "white" }}>
+            Loading...
+          </p>
+        )}
+
+        {error && (
+          <p style={{ color: "#ff8fab" }}>
+            {error}
+          </p>
+        )}
+
+        {success && (
+          <p style={{ color: "#4ade80" }}>
+            {success}
+          </p>
+        )}
+
+        {/* =========================
+            CREATE INCIDENT
+        ========================= */}
         <form onSubmit={handleSubmit}>
-          <input
-            placeholder="Title"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-          />
 
-          <textarea
-            placeholder="Description"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-          />
+          <div
+            className="page-card"
+            style={{ marginBottom: "20px" }}
+          >
 
-          <input type="file" onChange={handleFileChange} />
+            <h3>Create Incident</h3>
 
-          <button>Create</button>
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "12px",
+                marginTop: "15px",
+              }}
+            >
+
+              <input
+                className="form-input"
+                placeholder="Incident Title"
+                value={title}
+                onChange={(e) =>
+                  setTitle(e.target.value)
+                }
+              />
+
+              <textarea
+                className="form-textarea"
+                placeholder="Description"
+                value={description}
+                onChange={(e) =>
+                  setDescription(e.target.value)
+                }
+              />
+
+              <input
+                className="form-input"
+                type="file"
+                onChange={handleFileChange}
+              />
+
+              <button
+                className="form-btn"
+                type="submit"
+              >
+                Create Incident
+              </button>
+
+            </div>
+
+          </div>
+
         </form>
 
-        {incidents.map((i) => (
-          <div key={i.id}>
-            <h3>{i.title}</h3>
-            <p>{i.description}</p>
+        {/* =========================
+            INCIDENT LIST
+        ========================= */}
+        {incidents.length === 0 ? (
 
-            {i.file_url && (
-              <a href={`https://cherai-kosc.onrender.com${i.file_url}`}>
-                View File
-              </a>
-            )}
+          <p style={{ color: "#ccc" }}>
+            No incidents found
+          </p>
 
-            <button onClick={() => handleDelete(i.id)}>
-              Delete
-            </button>
-          </div>
-        ))}
+        ) : (
+
+          incidents.map((i) => (
+
+            <div
+              key={i.id}
+              className="page-card"
+              style={{ marginBottom: "15px" }}
+            >
+
+              <h3>{i.title}</h3>
+
+              <p style={{ color: "#ccc" }}>
+                {i.description}
+              </p>
+
+              {i.file_url && (
+                <a
+                  href={`https://cherai-kosc.onrender.com${i.file_url}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    color: "#ff8fab",
+                  }}
+                >
+                  View Attachment
+                </a>
+              )}
+
+              <div style={{ marginTop: "15px" }}>
+                <button
+                  className="logout-btn"
+                  onClick={() => handleDelete(i.id)}
+                >
+                  Delete
+                </button>
+              </div>
+
+            </div>
+
+          ))
+        )}
 
       </div>
+
     </div>
   );
 };
