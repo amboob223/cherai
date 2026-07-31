@@ -1,70 +1,189 @@
-# Getting Started with Create React App
+# 🍒 CherAI
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+**Compliance Simplified**
 
-## Available Scripts
+CherAI is a full-stack Governance, Risk, and Compliance (GRC) platform that helps organizations manage policies, compliance tasks, incidents, and evidence through a secure, centralized dashboard. Built using the PERN stack (PostgreSQL, Express.js, React, and Node.js), CherAI demonstrates modern full-stack development, secure authentication, and role-based access control.
 
-In the project directory, you can run:
+---
 
-### `npm start`
+## 🌐 Live Demo
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+**Application:** https://thecherai.netlify.app
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+---
 
-### `npm test`
+## 📖 Overview
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+Managing compliance manually often leads to scattered documentation, missed deadlines, and limited visibility into organizational risk. CherAI provides a centralized platform for tracking compliance activities, assigning responsibilities, and maintaining documentation from a single dashboard.
 
-### `npm run build`
+The application was designed as a portfolio project to showcase secure web development, RESTful API design, PostgreSQL database management, and responsive React interfaces.
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+---
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+## ✨ Features
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+* Secure user authentication using JWT
+* Password encryption with bcrypt
+* Role-Based Access Control (RBAC)
+* Policy management
+* Compliance task management
+* Incident tracking
+* Dashboard analytics
+* Evidence and document uploads
+* Search and filtering
+* RESTful API
+* Responsive design
+* PostgreSQL database integration
 
-### `npm run eject`
+---
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+## 🏗 Architecture
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+```text
+                    React Frontend
+                           │
+                    React Router
+                           │
+                     Axios API Calls
+                           │
+                    Express.js Server
+                           │
+          JWT Authentication & RBAC Middleware
+                           │
+                     PostgreSQL Database
+```
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+---
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+## 💻 Tech Stack
 
-## Learn More
+### Frontend
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+* React
+* React Router
+* Axios
+* HTML5
+* CSS3
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+### Backend
 
-### Code Splitting
+* Node.js
+* Express.js
+* JWT
+* bcrypt
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+### Database
 
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+* PostgreSQL
 
 ### Deployment
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+* Netlify
+* Render
 
-### `npm run build` fails to minify
+---
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+## 📷 Screenshots
+
+Add screenshots inside a **screenshots** folder.
+
+```text
+screenshots/
+├── login.png
+├── dashboard.png
+├── policies.png
+├── tasks.png
+├── incidents.png
+└── users.png
+```
+
+Example:
+
+```markdown
+![Dashboard](screenshots/dashboard.png)
+
+![Policies](screenshots/policies.png)
+
+![Tasks](screenshots/tasks.png)
+```
+
+---
+
+## 🚀 Getting Started
+
+Clone the repository
+
+```bash
+git clone https://github.com/YOUR_USERNAME/cherai.git
+```
+
+Install dependencies
+
+```bash
+npm install
+```
+
+Run the server
+
+```bash
+npm run dev
+```
+
+Run the client
+
+```bash
+npm start
+```
+
+---
+
+## 📂 Project Structure
+
+```text
+client/
+server/
+database/
+screenshots/
+README.md
+```
+
+---
+
+## 🔒 Security
+
+* JWT Authentication
+* Password Hashing (bcrypt)
+* Role-Based Authorization
+* Protected API Routes
+* Secure REST Architecture
+
+---
+
+## 🚧 Future Improvements
+
+* Multi-tenant organizations
+* Audit logs
+* AI-powered compliance recommendations
+* ISO 27001 templates
+* SOC 2 controls
+* Risk register
+* Vendor management
+* Email notifications
+* Dark mode
+* Mobile optimization
+
+---
+
+## 👨‍💻 Author
+
+**Abdul Mboob**
+
+* Master of Economics
+* Cybersecurity Professional
+* Full Stack Developer
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License.
